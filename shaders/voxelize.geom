@@ -38,7 +38,7 @@ void AddVertex(in vec3 world_mid, in int vert_index, in int axis)
 
 	vec2 screen_pos = WorldToScreen(gWorldPos, axis), screen_mid_pos = WorldToScreen(world_mid, axis);
 
-	//screen_pos += normalize(screen_pos - screen_mid_pos) * 0.05f;
+	screen_pos += normalize(screen_pos - screen_mid_pos) * 0.05f;
 
 	gl_Position = vec4(screen_pos, 1.0f, 1.0f);
 	EmitVertex();

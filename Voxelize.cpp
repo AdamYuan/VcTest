@@ -7,27 +7,29 @@
 #include "Voxelize.hpp"
 #include "Config.hpp"
 #include "Resources.hpp"
+#include <GLFW/glfw3.h>
 
 void Voxelize::Initialize()
 {
 	float max_anisotropy;
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotropy);
-	printf("%f\n", max_anisotropy);
+	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotropy);
+	//printf("%f\n", max_anisotropy);
 	auto *data = new GLubyte[kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4];
 	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
 	/*for(int i = 0; i < kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z; ++i)
 	{
-		data[i*4 + 3] = 0;
+		data[i*4 + 3] = 255;
 	}*/
 	voxel_texture_.Initialize();
 	voxel_texture_.Load(mygl3::ImageInfo(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z,
 										 GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, data), true);
 
-	printf("%d\n", mygl3::Texture3D::GetLevel3D(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z));
+	//printf("%d\n", mygl3::Texture3D::GetLevel3D(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z));
 	delete[] data;
 	GLfloat border_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	glTextureParameterfv(voxel_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
 	//glTextureParameterf(voxel_texture_.Get(), GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
+	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 	voxel_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
 	glBindImageTexture(6, voxel_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
@@ -59,8 +61,9 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 	res::sponza_model.Render();
 
 	glEnable(GL_CULL_FACE); glEnable(GL_DEPTH_TEST);
+	double start = glfwGetTime();
 	voxel_texture_.GenerateMipmap();
-	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+	printf("Voxelize lasted: %lf sec\n", glfwGetTime() - start);
 }
 
 /*void Voxelize::Debug()

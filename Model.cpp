@@ -23,12 +23,11 @@ void Model::Load(const char *filename)
 													   aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 	if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
 	{
-		printf("ERROR:ASSIMP::%s\n", importer.GetErrorString());
+		printf("Error when loading model: %s\n", importer.GetErrorString());
 		return;
 	}
 	process_node(scene->mRootNode, scene);
-
-	printf("%f %f %f\n%f %f %f\n", min_pos_.x, min_pos_.y, min_pos_.z, max_pos_.x, max_pos_.y, max_pos_.z);
+	//printf("%f %f %f\n%f %f %f\n", min_pos_.x, min_pos_.y, min_pos_.z, max_pos_.x, max_pos_.y, max_pos_.z);
 }
 
 void Model::process_node(const aiNode *node, const aiScene *scene)
@@ -44,31 +43,24 @@ void Model::process_node(const aiNode *node, const aiScene *scene)
 
 void Model::process_mesh(const aiMesh *mesh, const aiScene *scene)
 {
+#define TO_GLM_VEC3(a) (glm::vec3((a).x, (a).y, (a).z))
 	std::vector<Vertex> vertices;
 	std::vector<unsigned> indices;
+	vertices.reserve(mesh->mNumVertices);
+	indices.reserve(mesh->mNumFaces * 3);
 
 	for(size_t i = 0; i < mesh->mNumVertices; ++i)
 	{
 		Vertex v;
-		v.position.x = mesh->mVertices[i].x;
-		v.position.y = mesh->mVertices[i].y;
-		v.position.z = mesh->mVertices[i].z;
+		v.position = TO_GLM_VEC3(mesh->mVertices[i]);
 		v.position /= kScale; //scale
 
 		max_pos_ = glm::max(max_pos_, v.position);
 		min_pos_ = glm::min(min_pos_, v.position);
 
-		v.normal.x = mesh->mNormals[i].x;
-		v.normal.y = mesh->mNormals[i].y;
-		v.normal.z = mesh->mNormals[i].z;
-
-		v.tangent.x = mesh->mTangents[i].x;
-		v.tangent.y = mesh->mTangents[i].y;
-		v.tangent.z = mesh->mTangents[i].z;
-
-		v.bitangent.x = mesh->mBitangents[i].x;
-		v.bitangent.y = mesh->mBitangents[i].y;
-		v.bitangent.z = mesh->mBitangents[i].z;
+		v.normal = TO_GLM_VEC3(mesh->mNormals[i]);
+		v.tangent = TO_GLM_VEC3(mesh->mTangents[i]);
+		v.bitangent = TO_GLM_VEC3(mesh->mBitangents[i]);
 
 		if(mesh->mTextureCoords[0])
 		{
@@ -79,6 +71,8 @@ void Model::process_mesh(const aiMesh *mesh, const aiScene *scene)
 			v.texcoords.x = v.texcoords.y = 0;
 		vertices.push_back(v);
 	}
+#undef TO_GLM_VEC3
+
 	for(size_t i = 0; i < mesh->mNumFaces; i++)
 	{
 		aiFace &face = mesh->mFaces[i];
