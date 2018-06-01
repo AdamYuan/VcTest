@@ -31,7 +31,7 @@ void Voxelize::Initialize()
 	//glTextureParameterf(voxel_texture_.Get(), GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
 	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 	voxel_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
-	glBindImageTexture(6, voxel_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(7, voxel_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 	shader_.Initialize();
 	shader_.LoadFromFile("shaders/voxelize.vert", GL_VERTEX_SHADER);
@@ -65,20 +65,3 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 	voxel_texture_.GenerateMipmap();
 	printf("Voxelize lasted: %lf sec\n", glfwGetTime() - start);
 }
-
-/*void Voxelize::Debug()
-{
-	voxel_texture_.SetSizeFilter(GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
-	glDisable(GL_CULL_FACE);
-
-	glViewport(0, 0, kWidth, kHeight);
-
-	debug_shader_.Use();
-	debug_shader_.SetMat4(debug_unif_view_, res::cam_view);
-	voxel_texture_.Bind(GL_TEXTURE6);
-
-	debug_object_.Render(GL_TRIANGLES);
-
-	glEnable(GL_CULL_FACE);
-	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
-}*/

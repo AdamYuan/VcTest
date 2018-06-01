@@ -70,12 +70,6 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 	{
 		vec3 pos = start_pos + dist * direction;
 
-		if(
-				pos.x < uVoxelGridRangeMin.x || pos.x > uVoxelGridRangeMax.x ||
-				pos.y < uVoxelGridRangeMin.y || pos.y > uVoxelGridRangeMax.y ||
-				pos.z < uVoxelGridRangeMin.z || pos.z > uVoxelGridRangeMax.z)
-			break;
-
 		float diameter = max(uVoxelWorldSize, 2.0f * tan_half_angle * dist);
 		float lod = log2(diameter / uVoxelWorldSize);
 		vec4 voxel_color = SampleVoxel(pos, lod);
@@ -140,7 +134,7 @@ void main()
 			final_color = DirectLight(normal) * CalculateShadow(position);
 			if(uEnableIndirectTrace)
 				final_color += IndirectLight(position, mat3(tangent, normal, bitangent));
-			//final_color += ConeTrace(position, reflect(vViewDir, normal), 0.3f);
+			//final_color += ConeTrace(position, reflect(vViewDir, normal), 0.2f);
 			if(uShowAlbedo) 
 				final_color *= albedo.rgb;
 			final_color *= kLightColor;
@@ -151,6 +145,7 @@ void main()
 	else
 		final_color = texture(uSkyboxTexture, vViewDir).rgb;
 
-	final_color = pow(final_color, vec3(1.0f / 2.2f));
-	FragColor = vec4(final_color, 1.0f);
+	vec3 mapped = vec3(1.0f) - exp(-final_color * 5.0f);
+	mapped = pow(mapped, vec3(1.0f / 2.2f));
+	FragColor = vec4(mapped, 1.0f);
 }
