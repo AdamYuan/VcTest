@@ -56,7 +56,7 @@ void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
 vec4 SampleVoxel(in vec3 world_pos, in float lod)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
-	voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
+	//voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
 	return textureLod(uVoxelTexture, voxel_uv, lod);
 }
 
@@ -145,7 +145,7 @@ void main()
 	else
 		final_color = texture(uSkyboxTexture, vViewDir).rgb;
 
-	vec3 mapped = vec3(1.0f) - exp(-final_color * 5.0f);
+	vec3 mapped = vec3(1.0f) - exp(-final_color * 4.0f);
 	mapped = pow(mapped, vec3(1.0f / 2.2f));
 	FragColor = vec4(mapped, 1.0f);
 }

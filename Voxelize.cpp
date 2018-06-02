@@ -11,9 +11,6 @@
 
 void Voxelize::Initialize()
 {
-	float max_anisotropy;
-	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotropy);
-	//printf("%f\n", max_anisotropy);
 	auto *data = new GLubyte[kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4];
 	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
 	/*for(int i = 0; i < kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z; ++i)
@@ -28,8 +25,7 @@ void Voxelize::Initialize()
 	delete[] data;
 	GLfloat border_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	glTextureParameterfv(voxel_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
-	//glTextureParameterf(voxel_texture_.Get(), GL_TEXTURE_MAX_ANISOTROPY, 8.0f);
-	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+	voxel_texture_.SetSizeFilter(GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST);
 	voxel_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
 	glBindImageTexture(7, voxel_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
