@@ -23,6 +23,7 @@ void main()
 	if(uHaveNormalTexture)
 	{
 		GNormal = normalize(texture(uNormalTexture, vTexcoords).rgb * 2.0f - 1.0f);
+		GNormal.y = -GNormal.y;
 		GNormal = (vTBN * GNormal) * 0.5f + 0.5f;
 	}
 	else
