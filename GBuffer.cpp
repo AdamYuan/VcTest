@@ -36,13 +36,7 @@ void GBuffer::Initialize()
 	glNamedFramebufferDrawBuffers(fbo_.Get(), 3, attachments);
 
 	shader_.Initialize();
-	shader_.LoadFromFile("shaders/gbuffer.frag", GL_FRAGMENT_SHADER);
-	shader_.LoadFromFile("shaders/gbuffer.vert", GL_VERTEX_SHADER);
-	unif_projection_ = shader_.GetUniform("uProjection");
-	unif_view_ = shader_.GetUniform("uView");
-	unif_have_normal_texture_ = shader_.GetUniform("uHaveNormalTexture");
-
-	shader_.SetMat4(unif_projection_, res::cam_projection);
+	shader_.SetUProjection(res::cam_projection);
 }
 
 void GBuffer::Update()
@@ -54,7 +48,7 @@ void GBuffer::Update()
 	glCullFace(GL_BACK);
 
 	shader_.Use();
-	shader_.SetMat4(unif_view_, res::cam_view);
+	shader_.SetUView(res::cam_view);
 
-	res::sponza_model.Render(unif_have_normal_texture_);
+	res::sponza_model.Render(shader_.GetUHaveNormalTextureLocation());
 }

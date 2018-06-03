@@ -23,33 +23,15 @@ void Renderer::Initialize()
 	gbuffer_.Initialize();
 
 	trace_shader_.Initialize();
-	trace_shader_.LoadFromFile("shaders/trace.frag", GL_FRAGMENT_SHADER);
-	trace_shader_.LoadFromFile("shaders/trace.vert", GL_VERTEX_SHADER);
-	//camera
-	trace_unif_projection_ = trace_shader_.GetUniform("uProjection");
-	trace_unif_view_ = trace_shader_.GetUniform("uView");
-	trace_unif_cam_position_ = trace_shader_.GetUniform("uCamPosition");
-	//light
-	trace_unif_light_matrix_ = trace_shader_.GetUniform("uLightMatrix");
-	trace_unif_light_dir_ = trace_shader_.GetUniform("uLightDir");
-	//voxel settings
-	trace_unif_voxel_dimension_ = trace_shader_.GetUniform("uVoxelDimension");
-	trace_unif_voxel_world_size_ = trace_shader_.GetUniform("uVoxelWorldSize");
-	trace_unif_voxel_grid_range_min_ = trace_shader_.GetUniform("uVoxelGridRangeMin");
-	trace_unif_voxel_grid_range_max_ = trace_shader_.GetUniform("uVoxelGridRangeMax");
-	//flags
-	trace_unif_indirect_trace_ = trace_shader_.GetUniform("uEnableIndirectTrace");
-	trace_unif_show_albedo_ = trace_shader_.GetUniform("uShowAlbedo");
-	trace_unif_debug_voxel_ = trace_shader_.GetUniform("uDebugVoxel");
 
-	trace_shader_.SetMat4(trace_unif_projection_, res::cam_projection);
-	trace_shader_.SetMat4(trace_unif_light_matrix_, res::light_matrix);
-	trace_shader_.SetVec3(trace_unif_light_dir_, kLightDir);
+	trace_shader_.SetUProjection(res::cam_projection);
+	trace_shader_.SetULightMatrix(res::light_matrix);
+	trace_shader_.SetULightDir(kLightDir);
 
-	trace_shader_.SetIVec3(trace_unif_voxel_dimension_, kVoxelDimension);
-	trace_shader_.SetFloat(trace_unif_voxel_world_size_, kVoxelWorldSize);
-	trace_shader_.SetVec3(trace_unif_voxel_grid_range_min_, kVoxelGridRangeMin);
-	trace_shader_.SetVec3(trace_unif_voxel_grid_range_max_, kVoxelGridRangeMax);
+	trace_shader_.SetUVoxelDimension(kVoxelDimension);
+	trace_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
+	trace_shader_.SetUVoxelGridRangeMin(kVoxelGridRangeMin);
+	trace_shader_.SetUVoxelGridRangeMax(kVoxelGridRangeMax);
 }
 
 void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo)
@@ -62,21 +44,21 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo)
 	glCullFace(GL_BACK);
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	gbuffer_.GetPositionTexture().Bind(GL_TEXTURE0);
-	gbuffer_.GetNormalTexture().Bind(GL_TEXTURE1);
-	gbuffer_.GetAlbedoTexture().Bind(GL_TEXTURE2);
-	skybox_.Get().Bind(GL_TEXTURE4);
-	shadow_map_.Get().Bind(GL_TEXTURE5);
-	voxelize_.Get().Bind(GL_TEXTURE6);
+	gbuffer_.GetPositionTexture().Bind(0);
+	gbuffer_.GetNormalTexture().Bind(1);
+	gbuffer_.GetAlbedoTexture().Bind(2);
+	skybox_.Get().Bind(4);
+	shadow_map_.Get().Bind(5);
+	voxelize_.Get().Bind(6);
 
 	trace_shader_.Use();
 
-	trace_shader_.SetMat4(trace_unif_view_, res::cam_view);
-	trace_shader_.SetVec3(trace_unif_cam_position_, res::cam_pos);
+	trace_shader_.SetUView(res::cam_view);
+	trace_shader_.SetUCamPosition(res::cam_pos);
 	//set flags
-	trace_shader_.SetInt(trace_unif_indirect_trace_, indirect_trace);
-	trace_shader_.SetInt(trace_unif_show_albedo_, show_albedo);
-	trace_shader_.SetInt(trace_unif_debug_voxel_, debug_voxel);
+	trace_shader_.SetUEnableIndirectTrace(indirect_trace);
+	trace_shader_.SetUShowAlbedo(show_albedo);
+	trace_shader_.SetUDebugVoxel(debug_voxel);
 	res::quad_object.Render(GL_TRIANGLES);
 
 	glEnable(GL_DEPTH_TEST);

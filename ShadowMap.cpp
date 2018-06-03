@@ -10,9 +10,6 @@ void ShadowMap::Initialize()
 {
 	//depth shader
 	shadow_shader_.Initialize();
-	shadow_shader_.LoadFromFile("shaders/shadow.frag", GL_FRAGMENT_SHADER);
-	shadow_shader_.LoadFromFile("shaders/shadow.vert", GL_VERTEX_SHADER);
-	shadow_unif_light_matrix_ = shadow_shader_.GetUniform("uLightMatrix");
 
 	shadow_texture_.Initialize();
 	shadow_texture_.Load(mygl3::ImageInfo(kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT24, 0, 0, nullptr), false);
@@ -35,7 +32,7 @@ void ShadowMap::Update()
 	glViewport(0, 0, kShadowWidth, kShadowHeight);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	shadow_shader_.SetMat4(shadow_unif_light_matrix_, res::light_matrix);
+	shadow_shader_.SetULightMatrix(res::light_matrix);
 	shadow_shader_.Use();
 	res::sponza_model.Render();
 }

@@ -6,13 +6,14 @@
 #define SCENETEST_SHADOWMAP_HPP
 
 #include <mygl3/framebuffer.hpp>
+#include <asserts/ShadowShader.hpp>
 #include "Model.hpp"
 
 class ShadowMap
 {
 private:
 	//shadow map
-	mygl3::Shader shadow_shader_; GLint shadow_unif_light_matrix_;
+	asserts::ShadowShader shadow_shader_;
 	mygl3::FrameBuffer shadow_fbo_;
 	mygl3::Texture2D shadow_texture_;
 

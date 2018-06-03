@@ -77,10 +77,7 @@ void Skybox::Initialize()
 	object_.SetAttributes(0, 3);
 
 	shader_.Initialize();
-	shader_.LoadFromFile("shaders/skybox.vert", GL_VERTEX_SHADER);
-	shader_.LoadFromFile("shaders/skybox.frag", GL_FRAGMENT_SHADER);
-	unif_projection_ = shader_.GetUniform("uProjection");
-	unif_view_ = shader_.GetUniform("uView");
+	shader_.SetUProjection(res::cam_projection);
 }
 
 void Skybox::Render()
@@ -90,10 +87,9 @@ void Skybox::Render()
 	glCullFace(GL_BACK);
 
 	glm::mat4 view = glm::mat4(glm::mat3(res::cam_view));
-	shader_.SetMat4(unif_view_, view);
-	shader_.SetMat4(unif_projection_, res::cam_projection);
+	shader_.SetUView(res::cam_view);
 
-	texture_.Bind(GL_TEXTURE0);
+	texture_.Bind(0);
 
 	shader_.Use();
 	object_.Render(GL_TRIANGLES);

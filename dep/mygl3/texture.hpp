@@ -80,11 +80,10 @@ namespace mygl3
 			assert(tex_ != 0);
 			glBindTexture(T, tex_);
 		}
-		void Bind(GLenum slot) const
+		void Bind(GLuint unit) const
 		{
 			assert(tex_ != 0);
-			glActiveTexture(slot);
-			glBindTexture(T, tex_);
+			glBindTextureUnit(unit, tex_);
 		}
 
 		static GLsizei GetLevel1D(GLsizei w)
