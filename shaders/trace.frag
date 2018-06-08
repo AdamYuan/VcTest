@@ -56,7 +56,6 @@ void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
 vec4 SampleVoxel(in vec3 world_pos, in float lod)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
-	//voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
 	return textureLod(uVoxelTexture, voxel_uv, lod);
 }
 
@@ -64,7 +63,7 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 {
 	vec4 color = vec4(0.0f);
 
-	float dist = uVoxelWorldSize * 2.5f;
+	float dist = uVoxelWorldSize * 4.0f;
 
 	while(dist < 32.0f && color.a < 1.0f)
 	{
@@ -138,14 +137,15 @@ void main()
 			if(uShowAlbedo) 
 				final_color *= albedo.rgb;
 			final_color *= kLightColor;
+
+			//debug mipmap
+			//final_color = SampleVoxel(position, 5.0f).rgb;
 		}
-		//debug mipmap
-		//final_color += SampleVoxel(position, 7.0f).rgb;
 	}
 	else
 		final_color = texture(uSkyboxTexture, vViewDir).rgb;
 
-	vec3 mapped = vec3(1.0f) - exp(-final_color * 4.0f);
+	vec3 mapped = vec3(1.0f) - exp(-final_color * 5.0f);
 	mapped = pow(mapped, vec3(1.0f / 2.2f));
 	FragColor = vec4(mapped, 1.0f);
 }

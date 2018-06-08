@@ -7,7 +7,7 @@ in vec3 gWorldPos;
 
 layout (binding = 0) uniform sampler2D uDiffuseTexture;
 layout (binding = 5) uniform sampler2DShadow uShadowMap;
-layout (rgba8, binding = 7) uniform image3D uVoxelTexture;
+layout (rgba8, binding = 7) uniform writeonly image3D uVoxelTexture;
 
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
 uniform float uVoxelWorldSize;
