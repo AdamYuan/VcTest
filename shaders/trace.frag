@@ -12,6 +12,8 @@ layout (binding = 4) uniform samplerCube uSkyboxTexture;
 layout (binding = 5) uniform sampler2DShadow uShadowMap;
 layout (binding = 6) uniform sampler3D uVoxelTexture;
 
+layout (binding = 7) uniform sampler3D uVoxelTextureMipmaps[6];
+
 uniform mat4 uLightMatrix;
 uniform vec3 uLightDir;
 
@@ -53,10 +55,22 @@ void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
 	v3 = cross(v1, v2);
 }
 
-vec4 SampleVoxel(in vec3 world_pos, in float lod)
+vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
-	return textureLod(uVoxelTexture, voxel_uv, lod);
+
+	float mipmap_lod = max(0.0f, lod - 1.0f);
+	vec4 mipmap_color = 
+		textureLod(uVoxelTextureMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x + 
+		textureLod(uVoxelTextureMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y + 
+		textureLod(uVoxelTextureMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	//vec4 mipmap_color = textureLod(uVoxelTextureMipmaps[5], voxel_uv, mipmap_lod);
+	if(lod < 1.0f)
+	{
+		return mix(texture(uVoxelTexture, voxel_uv), mipmap_color, lod);
+	}
+	else
+		return mipmap_color;
 }
 
 vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
@@ -65,13 +79,19 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 
 	float dist = uVoxelWorldSize * 4.0f;
 
+	ivec3 load_indices = ivec3(
+			direction.x < 0.0f ? 0 : 1, 
+			direction.y < 0.0f ? 2 : 3, 
+			direction.z < 0.0f ? 4 : 5);
+	vec3 weights = direction * direction;
+
 	while(dist < 32.0f && color.a < 1.0f)
 	{
 		vec3 pos = start_pos + dist * direction;
 
 		float diameter = max(uVoxelWorldSize, 2.0f * tan_half_angle * dist);
 		float lod = log2(diameter / uVoxelWorldSize);
-		vec4 voxel_color = SampleVoxel(pos, lod);
+		vec4 voxel_color = SampleVoxel(pos, lod, load_indices, weights);
 		color += voxel_color * (1.0f - color.a);
 
 		dist += diameter * 0.5f;
@@ -132,14 +152,14 @@ void main()
 
 			final_color = DirectLight(normal) * CalculateShadow(position);
 			if(uEnableIndirectTrace)
-				final_color += IndirectLight(position, mat3(tangent, normal, bitangent));
+				final_color += IndirectLight(position + normal * uVoxelWorldSize, mat3(tangent, normal, bitangent));
 			//final_color += ConeTrace(position, reflect(vViewDir, normal), 0.2f);
 			if(uShowAlbedo) 
 				final_color *= albedo.rgb;
 			final_color *= kLightColor;
 
 			//debug mipmap
-			//final_color = SampleVoxel(position, 5.0f).rgb;
+			//final_color = SampleVoxel(position, 4.0f, ivec3(0), vec3(0.0f)).rgb;
 		}
 	}
 	else

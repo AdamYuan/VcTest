@@ -52,3 +52,9 @@ begin SkyboxShader
 	u mat4 uProjection
 	u mat4 uView
 end
+
+begin VoxelMipmapShader
+	src shaders/mipmap.comp GL_COMPUTE_SHADER
+	u ivec3 uVoxelDimensionMipmap
+	u int uSourceLod
+end

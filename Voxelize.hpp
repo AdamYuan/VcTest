@@ -13,7 +13,7 @@
 class Voxelize
 {
 private:
-	mygl3::Texture3D voxel_texture_;
+	mygl3::Texture3D voxel_texture_, mipmap_textures_[6];
 	asserts::VoxelizeShader voxelize_shader_;
 	asserts::VoxelMipmapShader mipmap_shader_;
 	int max_mipmap_level_;
@@ -21,6 +21,7 @@ public:
 	void Initialize();
 	void Update(const mygl3::Texture2D &shadow_map);
 	const mygl3::Texture3D &Get() const { return voxel_texture_; }
+	const decltype(mipmap_textures_) &GetMipmap() const { return mipmap_textures_; }
 };
 
 

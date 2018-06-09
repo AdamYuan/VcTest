@@ -1,21 +1,26 @@
 #version 450 core
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout (rgba8, binding = 6) uniform writeonly image3D uVoxelTextureMipmap;
-layout (binding = 7) uniform sampler3D uVoxelTextureSource;
+layout (binding = 0, rgba8) uniform writeonly image3D uVoxelTextureMipmaps[6];
+layout (binding = 0) uniform sampler3D uVoxelTextureSources[6];
 
-uniform int uSourceLod;
 uniform ivec3 uVoxelDimensionMipmap;
+uniform int uSourceLod;
 
 const ivec3 kOffsets[8] = 
 {
 	{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, 
 	{1, 0, 0}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}, 
 };
-const ivec3 kOpposite[8] = 
+const int kOpposites[8][3] = 
 {
 	{4, 2, 1}, {5, 3, 0}, {6, 0, 3}, {7, 1, 2},
 	{0, 6, 5}, {1, 7, 4}, {2, 4, 7}, {3, 5, 6}
+};
+const int kSides[6][4] = 
+{
+	{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 4, 5}, 
+	{2, 3, 6, 7}, {0, 2, 4, 6}, {1, 3, 5, 7}
 };
 
 void main()
@@ -29,15 +34,21 @@ void main()
 	ivec3 mipmap_pos = ivec3(gl_GlobalInvocationID);
 
 	vec4 arr[8];
-	for(int i = 0; i < 8; ++i)
-		arr[i] = texelFetch(uVoxelTextureSource, mipmap_pos * 2 + kOffsets[i], uSourceLod);
-
-	vec4 sum = vec4(0.0f);
-	for(int i = 0; i < 8; ++i)
+	if(uSourceLod == 0)
+		for(int i = 0; i < 8; ++i)
+			arr[i] = texelFetch(uVoxelTextureSources[0], mipmap_pos * 2 + kOffsets[i], 0);
+	
+	for(int f = 0; f < 6; ++f)
 	{
-		sum += arr[i] * 0.125f;
-		sum += arr[i] * (3.0f - arr[kOpposite[i].x].a - arr[kOpposite[i].y].a - arr[kOpposite[i].z].a) / 24.0f;
-	}
+		if(uSourceLod > 0)
+			for(int i = 0; i < 8; ++i)
+				arr[i] = texelFetch(uVoxelTextureSources[f], mipmap_pos * 2 + kOffsets[i], uSourceLod - 1);
 
-	imageStore(uVoxelTextureMipmap, mipmap_pos, sum);
+		vec4 sum = vec4(0.0f);
+		for(int b = 0; b < 4; ++b)
+			sum += arr[kSides[f][b]] + arr[kOpposites[kSides[f][b]][f>>1]] * (1.0f - arr[kSides[f][b]].a);
+		sum *= 0.25f;
+
+		imageStore(uVoxelTextureMipmaps[f], mipmap_pos, sum);
+	}
 }
