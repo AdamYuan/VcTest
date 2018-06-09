@@ -95,7 +95,6 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 
 		glm::uvec3 compute_group{mipmap_texture_size / 4 + 1};
 		glDispatchCompute(compute_group.x, compute_group.y, compute_group.z);
-
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
