@@ -58,32 +58,56 @@ void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
 vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
+	voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
-	vec4 mipmap_color = 
-		textureLod(uVoxelTextureMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x + 
-		textureLod(uVoxelTextureMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y + 
-		textureLod(uVoxelTextureMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	vec4 mipmap_color = vec4(0.0f);
+	if(weights.x > 0.05f)
+		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
+	if(weights.y > 0.05f)
+		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
+	if(weights.z > 0.05f)
+		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
 	//vec4 mipmap_color = textureLod(uVoxelTextureMipmaps[5], voxel_uv, mipmap_lod);
+	if(lod < 1.0f)
+		return mix(texture(uVoxelTexture, voxel_uv), mipmap_color, lod);
+	else
+		return mipmap_color;
+}
+
+/*vec4 SampleVoxel(in vec3 world_pos, in float lod, in int dir)
+{
+	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
+	float mipmap_lod = max(0.0f, lod - 1.0f);
+	vec4 mipmap_color = textureLod(uVoxelTextureMipmaps[dir], voxel_uv, mipmap_lod);
 	if(lod < 1.0f)
 	{
 		return mix(texture(uVoxelTexture, voxel_uv), mipmap_color, lod);
 	}
 	else
 		return mipmap_color;
-}
+}*/
 
 vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 {
 	vec4 color = vec4(0.0f);
 
-	float dist = uVoxelWorldSize * 4.0f;
+	float dist = 0.5f;
 
 	ivec3 load_indices = ivec3(
 			direction.x < 0.0f ? 0 : 1, 
 			direction.y < 0.0f ? 2 : 3, 
 			direction.z < 0.0f ? 4 : 5);
 	vec3 weights = direction * direction;
+
+	/*vec3 weight = abs(direction);
+	int load_dir;
+	if(weight.x > weight.y && weight.x > weight.z)
+		load_dir = int(weight.x > 0);
+	else if(weight.y > weight.x && weight.y > weight.z)
+		load_dir = int(weight.y > 0) + 2;
+	else
+		load_dir = int(weight.z > 0) + 4;*/
 
 	while(dist < 32.0f && color.a < 1.0f)
 	{
@@ -152,7 +176,7 @@ void main()
 
 			final_color = DirectLight(normal) * CalculateShadow(position);
 			if(uEnableIndirectTrace)
-				final_color += IndirectLight(position + normal * uVoxelWorldSize, mat3(tangent, normal, bitangent));
+				final_color += IndirectLight(position, mat3(tangent, normal, bitangent));
 			//final_color += ConeTrace(position, reflect(vViewDir, normal), 0.2f);
 			if(uShowAlbedo) 
 				final_color *= albedo.rgb;

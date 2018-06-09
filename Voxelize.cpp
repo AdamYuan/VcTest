@@ -27,7 +27,7 @@ void Voxelize::Initialize()
 	delete[] data;
 	GLfloat border_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	glTextureParameterfv(voxel_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
-	voxel_texture_.SetSizeFilter(GL_LINEAR, GL_LINEAR);
+	voxel_texture_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 	voxel_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
 
 	//mipmap voxel textures
@@ -37,7 +37,7 @@ void Voxelize::Initialize()
 		t.Load(mygl3::ImageInfo(kVoxelDimension.x / 2, kVoxelDimension.y / 2, kVoxelDimension.z / 2,
 								GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, nullptr), true);
 		glTextureParameterfv(t.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
-		t.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+		t.SetSizeFilter(GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST);
 		t.SetWrapFilter(GL_CLAMP_TO_BORDER);
 	}
 
@@ -95,6 +95,8 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 
 		glm::uvec3 compute_group{mipmap_texture_size / 4 + 1};
 		glDispatchCompute(compute_group.x, compute_group.y, compute_group.z);
+
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
 	//voxel_texture_.GenerateMipmap();
