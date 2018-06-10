@@ -5,94 +5,79 @@
 #include "Model.hpp"
 #include "Config.hpp"
 #include <GLFW/glfw3.h>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
-void Mesh::Load(const std::vector<Vertex> &vertices, const std::vector<unsigned> &indices)
+void Mesh::Load(const std::vector<Vertex> &vertices)
 {
 	object.Initialize();
 	object.SetData(vertices, GL_STATIC_DRAW);
-	object.SetIndices(indices, GL_STATIC_DRAW);
 	object.SetAttributes(0, 3, 1, 3, 2, 2);
 }
 
 void Model::Load(const char *filename)
 {
-	min_pos_ = glm::vec3(FLT_MAX);
-	max_pos_ = glm::vec3(FLT_MIN);
-	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filename, aiProcess_Triangulate |
-													   aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
-	if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	std::string err;
+	if(!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename))
+		return;
+
+	if (!err.empty())
 	{
-		printf("Error when loading model: %s\n", importer.GetErrorString());
+		printf("Error when loading model: %s\n", err.c_str());
 		return;
 	}
-	process_node(scene->mRootNode, scene);
-	//printf("%f %f %f\n%f %f %f\n", min_pos_.x, min_pos_.y, min_pos_.z, max_pos_.x, max_pos_.y, max_pos_.z);
-}
 
-void Model::process_node(const aiNode *node, const aiScene *scene)
-{
-	for(size_t i = 0; i < node->mNumMeshes; ++i)
+	for(const auto &shape : shapes)
 	{
-		const aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-		process_mesh(mesh, scene);
-	}
-	for(size_t i = 0; i < node->mNumChildren; ++i)
-		process_node(node->mChildren[i], scene);
-}
-
-void Model::process_mesh(const aiMesh *mesh, const aiScene *scene)
-{
-#define TO_GLM_VEC3(a) (glm::vec3((a).x, (a).y, (a).z))
-	std::vector<Vertex> vertices;
-	std::vector<unsigned> indices;
-	vertices.reserve(mesh->mNumVertices);
-	indices.reserve(mesh->mNumFaces * 3);
-
-	for(size_t i = 0; i < mesh->mNumVertices; ++i)
-	{
-		Vertex v;
-		v.position = TO_GLM_VEC3(mesh->mVertices[i]);
-		v.position /= kScale; //scale
-
-		max_pos_ = glm::max(max_pos_, v.position);
-		min_pos_ = glm::min(min_pos_, v.position);
-
-		v.normal = TO_GLM_VEC3(mesh->mNormals[i]);
-		//v.tangent = TO_GLM_VEC3(mesh->mTangents[i]);
-		//v.bitangent = TO_GLM_VEC3(mesh->mBitangents[i]);
-
-		if(mesh->mTextureCoords[0])
+		std::vector<Vertex> vertices;
+		for (const auto& index : shape.mesh.indices)
 		{
-			v.texcoords.x = mesh->mTextureCoords[0][i].x;
-			v.texcoords.y = mesh->mTextureCoords[0][i].y;
+			Vertex vertex = {};
+
+			vertex.position = {
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+			};
+			vertex.normal = {
+					attrib.normals[3 * index.normal_index + 0],
+					attrib.normals[3 * index.normal_index + 1],
+					attrib.normals[3 * index.normal_index + 2]
+			};
+			vertex.texcoords = {
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+			};
+			vertex.position /= kScale;
+
+			vertices.push_back(vertex);
 		}
-		else
-			v.texcoords.x = v.texcoords.y = 0;
-		vertices.push_back(v);
-	}
-#undef TO_GLM_VEC3
 
-	for(size_t i = 0; i < mesh->mNumFaces; i++)
-	{
-		aiFace &face = mesh->mFaces[i];
-		for(size_t j = 0; j < face.mNumIndices; j++)
-			indices.push_back(face.mIndices[j]);
-	}
+		int material_id = shape.mesh.material_ids.front();
 
-	meshes_.emplace_back();
-	meshes_.back().Load(vertices, indices);
+		std::string str{materials[material_id].diffuse_texname};
+		auto iter = textures_.find(str);
+		if(iter == textures_.end())
+		{
+			textures_.insert(std::make_pair(str, mygl3::Texture2D{}));
+			iter = textures_.find(str);
+			iter->second.Initialize();
+			iter->second.Load(mygl3::ImageLoader(str.c_str()).GetInfo(), true);
+			iter->second.GenerateMipmap();
+			iter->second.SetWrapFilter(GL_REPEAT);
+			iter->second.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+		}
 
-	if(mesh->mMaterialIndex >= 0)
-	{
-		const aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-		process_texture(material, aiTextureType_DIFFUSE, &meshes_.back().diffuse_texture);
-		//meshes_.back().have_normal_texture =
-		//		process_texture(material, aiTextureType_NORMALS, &meshes_.back().normal_texture);
+		meshes_.emplace_back();
+		meshes_.back().Load(vertices);
+		meshes_.back().diffuse_texture = iter->second.Get();
 	}
 }
-
-bool Model::process_texture(const aiMaterial *material, aiTextureType type, GLuint *texture)
+/*bool Model::process_texture(const aiMaterial *material, aiTextureType type, GLuint *texture)
 {
 	if(material->GetTextureCount(type))
 	{
@@ -116,7 +101,7 @@ bool Model::process_texture(const aiMaterial *material, aiTextureType type, GLui
 	}
 	return false;
 }
-
+*/
 void Model::Render() const
 {
 	for(const Mesh &m : meshes_)

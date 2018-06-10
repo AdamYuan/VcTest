@@ -14,4 +14,4 @@ add_executable(
 		${SOURCE_FILES})
 
 include_directories(dep)
-target_link_libraries(VcTest glfw ${CMAKE_DL_LIBS} GL assimp)
+target_link_libraries(VcTest glfw ${CMAKE_DL_LIBS} GL)

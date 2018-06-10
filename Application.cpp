@@ -100,6 +100,7 @@ void Application::key_callback(GLFWwindow *window, int key, int, int action, int
 		else if(key == GLFW_KEY_ESCAPE)
 		{
 			app->control_ = !app->control_;
+			glfwSetCursorPos(window, kMouseX, kMouseY);
 			glfwSetInputMode(window, GLFW_CURSOR, app->control_ ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 		}
 	}
