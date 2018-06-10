@@ -16,9 +16,10 @@ void main()
 	HalfGPosition += texelFetch(uGPosition, texel + ivec2(0, 1), 0);
 	HalfGPosition += texelFetch(uGPosition, texel + ivec2(1, 1), 0);
 	HalfGPosition *= 0.25f;
-	HalfGNormal = texelFetch(uGNormal, texel, 0).rgb;
-	HalfGNormal += texelFetch(uGNormal, texel + ivec2(1, 0), 0).rgb;
-	HalfGNormal += texelFetch(uGNormal, texel + ivec2(0, 1), 0).rgb;
-	HalfGNormal += texelFetch(uGNormal, texel + ivec2(1, 1), 0).rgb;
-	HalfGNormal *= 0.25f;
+	HalfGNormal = texelFetch(uGNormal, texel, 0).rgb * 2.0f - 1.0f;
+	HalfGNormal += texelFetch(uGNormal, texel + ivec2(1, 0), 0).rgb * 2.0f - 1.0f;
+	HalfGNormal += texelFetch(uGNormal, texel + ivec2(0, 1), 0).rgb * 2.0f - 1.0f;
+	HalfGNormal += texelFetch(uGNormal, texel + ivec2(1, 1), 0).rgb * 2.0f - 1.0f;
+	HalfGNormal = normalize(HalfGNormal);
+	HalfGNormal = HalfGNormal * 0.5f + 0.5f;
 }

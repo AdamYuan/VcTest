@@ -108,12 +108,7 @@ void Application::key_callback(GLFWwindow *window, int key, int, int action, int
 void Application::focus_callback(GLFWwindow *window, int focused)
 {
 	auto *app = (Application *)glfwGetWindowUserPointer(window);
-	if(focused == GLFW_TRUE)
-	{
-		app->control_ = true;
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-	}
-	else
+	if(focused == GLFW_FALSE)
 	{
 		app->control_ = false;
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

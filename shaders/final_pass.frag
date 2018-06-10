@@ -104,35 +104,28 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 	return color.rgb;
 }
 
-vec3 IndirectLight(in float depth, in vec3 normal, in vec3 start_pos, in mat3 matrix)
+bool DetectEdge(in float depth, in vec3 normal)
 {
-	//edge detection
 	float sample_depth;
 	vec3 sample_normal;
-	bool edge = false;
-	for(int i = 0; !edge && i < 8; ++i)
+	for(int i = 0; i < 8; ++i)
 	{
 		sample_depth = texture(uGPosition, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).a;
 		if(abs(depth - sample_depth) > 0.7f)
-			edge = true;
-		else
-		{
-			sample_normal = texture(uGNormal, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).rgb * 2.0f - 1.0f;
-			if(dot(normal, sample_normal) < 0.8f)
-				edge = true;
-		}
+			return true;
+		sample_normal = texture(uGNormal, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).rgb * 2.0f - 1.0f;
+		if(dot(normal, sample_normal) < 0.8f)
+			return true;
 	}
+	return false;
+}
 
-	if(edge)
-	{
-		if(uShowEdge)
-			return vec3(1.0f, 0.0f, 0.0f);
-		vec3 color = vec3(0.0f);
-		for(int i = 0; i < kDiffuseConeNum; i++)
-			color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
-		return color;
-	}
-	return texture(uHalfTraceResult, vTexcoords).rgb;
+vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
+{
+	vec3 color = vec3(0.0f);
+	for(int i = 0; i < kDiffuseConeNum; i++)
+		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
+	return color;
 }
 
 float CalculateShadow(in vec3 position)
@@ -173,8 +166,19 @@ void main()
 		ons(normal, tangent, bitangent);
 
 		final_color = DirectLight(normal) * CalculateShadow(position);
-		if(uEnableIndirectTrace)
-			final_color += IndirectLight(depth, normal, position + normal * 0.5f, mat3(tangent, normal, bitangent));
+
+		bool edge = DetectEdge(depth, normal);
+		if(edge && uShowEdge)
+		{
+			final_color = vec3(1.0f, 0.0f, 0.0f);
+		}
+		else if(uEnableIndirectTrace)
+		{
+			if(edge)
+				final_color += IndirectLight(position + normal * 0.5f, mat3(tangent, normal, bitangent));
+			else
+				final_color += texture(uHalfTraceResult, vTexcoords).rgb;
+		}
 		if(uShowAlbedo) 
 			final_color *= albedo.rgb;
 		final_color *= kLightColor;
