@@ -19,14 +19,13 @@
 
 struct Vertex
 {
-	glm::vec3 position, normal, tangent, bitangent;
+	glm::vec3 position, normal;
 	glm::vec2 texcoords;
 };
 
 struct Mesh
 {
-	GLuint diffuse_texture, normal_texture;
-	bool have_normal_texture;
+	GLuint diffuse_texture;
 	mygl3::VertexObject<true> object;
 	void Load(const std::vector<Vertex> &vertices, const std::vector<unsigned> &indices);
 };
@@ -44,7 +43,7 @@ private:
 
 public:
 	void Load(const char *filename);
-	void Render(GLint unif_have_normal_texture = -1) const;
+	void Render() const;
 };
 
 

@@ -67,7 +67,7 @@ void GBuffer::Update()
 		gbuffer_shader_.Use();
 		gbuffer_shader_.SetUView(res::cam_view);
 
-		res::sponza_model.Render(gbuffer_shader_.GetUHaveNormalTextureLocation());
+		res::sponza_model.Render();
 	}
 
 	{

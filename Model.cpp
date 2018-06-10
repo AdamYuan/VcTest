@@ -11,7 +11,7 @@ void Mesh::Load(const std::vector<Vertex> &vertices, const std::vector<unsigned>
 	object.Initialize();
 	object.SetData(vertices, GL_STATIC_DRAW);
 	object.SetIndices(indices, GL_STATIC_DRAW);
-	object.SetAttributes(0, 3, 1, 3, 2, 3, 3, 3, 4, 2);
+	object.SetAttributes(0, 3, 1, 3, 2, 2);
 }
 
 void Model::Load(const char *filename)
@@ -19,7 +19,7 @@ void Model::Load(const char *filename)
 	min_pos_ = glm::vec3(FLT_MAX);
 	max_pos_ = glm::vec3(FLT_MIN);
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_CalcTangentSpace |
+	const aiScene *scene = importer.ReadFile(filename, aiProcess_Triangulate |
 													   aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 	if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode)
 	{
@@ -59,8 +59,8 @@ void Model::process_mesh(const aiMesh *mesh, const aiScene *scene)
 		min_pos_ = glm::min(min_pos_, v.position);
 
 		v.normal = TO_GLM_VEC3(mesh->mNormals[i]);
-		v.tangent = TO_GLM_VEC3(mesh->mTangents[i]);
-		v.bitangent = TO_GLM_VEC3(mesh->mBitangents[i]);
+		//v.tangent = TO_GLM_VEC3(mesh->mTangents[i]);
+		//v.bitangent = TO_GLM_VEC3(mesh->mBitangents[i]);
 
 		if(mesh->mTextureCoords[0])
 		{
@@ -87,8 +87,8 @@ void Model::process_mesh(const aiMesh *mesh, const aiScene *scene)
 	{
 		const aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 		process_texture(material, aiTextureType_DIFFUSE, &meshes_.back().diffuse_texture);
-		meshes_.back().have_normal_texture =
-				process_texture(material, aiTextureType_NORMALS, &meshes_.back().normal_texture);
+		//meshes_.back().have_normal_texture =
+		//		process_texture(material, aiTextureType_NORMALS, &meshes_.back().normal_texture);
 	}
 }
 
@@ -117,23 +117,11 @@ bool Model::process_texture(const aiMaterial *material, aiTextureType type, GLui
 	return false;
 }
 
-void Model::Render(GLint unif_have_normal_texture) const
+void Model::Render() const
 {
 	for(const Mesh &m : meshes_)
 	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m.diffuse_texture);
-		if(unif_have_normal_texture != -1)
-		{
-			glUniform1i(unif_have_normal_texture, m.have_normal_texture);
-
-			if(m.have_normal_texture)
-			{
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, m.normal_texture);
-			}
-		}
-
+		glBindTextureUnit(0, m.diffuse_texture);
 		m.object.Render(GL_TRIANGLES);
 	}
 }

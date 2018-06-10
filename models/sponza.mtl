@@ -6,7 +6,7 @@ newmtl leaf
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -15,14 +15,14 @@ newmtl leaf
 	map_Ka textures/sponza_thorn_diff.png
 	map_Kd textures/sponza_thorn_diff.png
 	map_d textures/sponza_thorn_mask.png
-	map_Kn textures/sponza_thorn_ddn.png
+	map_bump textures/sponza_thorn_bump.png
 
 newmtl vase_round
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -30,9 +30,9 @@ newmtl vase_round
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/vase_round.png
 	map_Kd textures/vase_round.png
-	map_Kn textures/vase_round_ddn.png
+	map_bump textures/vase_round_bump.png
 
-newmtl VasePlant
+newmtl Material__57
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
@@ -46,30 +46,13 @@ newmtl VasePlant
 	map_Ka textures/vase_plant.png
 	map_Kd textures/vase_plant.png
 	map_d textures/vase_plant_mask.png
-	map_Kn textures/vase_plant_NRM.png
-
-newmtl Material__57
-	Ns 10.0000
-	Ni 1.5000
-	d 1.0000
-	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
-	illum 2
-	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
-	Ke 0.0000 0.0000 0.0000
-	map_Ka textures/vase_plant.png
-	map_Kd textures/vase_plant.png
-	map_Kn textures/vase_plant_NRM.png
-	map_d textures/vase_plant_mask.png
 
 newmtl Material__298
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -77,43 +60,31 @@ newmtl Material__298
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/background.png
 	map_Kd textures/background.png
-	map_Kn textures/background_ddn.png
+	map_bump textures/background_bump.png
 
-newmtl 16___Default
-	Ns 10.0000
-	Ni 1.5000
-	d 1.0000
-	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
-	illum 2
-	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
-	Ke 0.0000 0.0000 0.0000
-	map_Ka textures/gi_flag.png
-	map_Kd textures/gi_flag.png
 
 newmtl bricks
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
+	Kd 1 1 1
+	Ks 0.01 0.01 0.01
 	Ke 0.0000 0.0000 0.0000
+	map_Ks textures/spnza_bricks_a_spec.png
 	map_Ka textures/spnza_bricks_a_diff.png
 	map_Kd textures/spnza_bricks_a_diff.png
-	map_Kn textures/spnza_bricks_a_ddn.png
+	map_bump textures/spnza_bricks_a_bump.png
 
 newmtl arch
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -121,14 +92,13 @@ newmtl arch
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_arch_diff.png
 	map_Kd textures/sponza_arch_diff.png
-	map_Kn textures/sponza_arch_diff_NRM.png
 
 newmtl ceiling
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -136,14 +106,13 @@ newmtl ceiling
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_ceiling_a_diff.png
 	map_Kd textures/sponza_ceiling_a_diff.png
-	map_Kn textures/sponza_ceiling_a_diff_NRM.png
 
 newmtl column_a
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -151,14 +120,14 @@ newmtl column_a
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_column_a_diff.png
 	map_Kd textures/sponza_column_a_diff.png
-	map_Kn textures/sponza_column_a_ddn.png
+	map_bump textures/sponza_column_a_bump.png
 
 newmtl floor
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -166,14 +135,13 @@ newmtl floor
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_floor_a_diff.png
 	map_Kd textures/sponza_floor_a_diff.png
-	map_Kn textures/sponza_floor_a_diff_NRM.png
 
 newmtl column_c
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -181,14 +149,14 @@ newmtl column_c
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_column_c_diff.png
 	map_Kd textures/sponza_column_c_diff.png
-	map_Kn textures/sponza_column_c_ddn.png
+	map_bump textures/sponza_column_c_bump.png
 
 newmtl details
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -196,14 +164,13 @@ newmtl details
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_details_diff.png
 	map_Kd textures/sponza_details_diff.png
-	map_Kn textures/sponza_details_diff_NRM.png
 
 newmtl column_b
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -211,27 +178,26 @@ newmtl column_b
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_column_b_diff.png
 	map_Kd textures/sponza_column_b_diff.png
-	map_Kn textures/sponza_column_b_ddn.png
+	map_bump textures/sponza_column_b_bump.png
 
 newmtl Material__47
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Kd textures/default_diff.png
 
 newmtl flagpole
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -239,14 +205,13 @@ newmtl flagpole
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_flagpole_diff.png
 	map_Kd textures/sponza_flagpole_diff.png
-	map_Kn textures/sponza_flagpole_diff_NRM.png
 
 newmtl fabric_e
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -254,14 +219,13 @@ newmtl fabric_e
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_fabric_green_diff.png
 	map_Kd textures/sponza_fabric_green_diff.png
-	map_Kn textures/sponza_fabric_blue_diff_NRM.png
 
 newmtl fabric_d
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -269,14 +233,13 @@ newmtl fabric_d
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_fabric_blue_diff.png
 	map_Kd textures/sponza_fabric_blue_diff.png
-	map_Kn textures/sponza_fabric_blue_diff_NRM.png
 
 newmtl fabric_a
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -284,14 +247,13 @@ newmtl fabric_a
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_fabric_diff.png
 	map_Kd textures/sponza_fabric_diff.png
-	map_Kn textures/sponza_fabric_blue_diff_NRM.png
 
 newmtl fabric_g
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.0000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -299,14 +261,13 @@ newmtl fabric_g
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_curtain_blue_diff.png
 	map_Kd textures/sponza_curtain_blue_diff.png
-	map_Kn textures/sponza_curtain_blue_diff_NRM.png
 
 newmtl fabric_c
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.0000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -314,14 +275,13 @@ newmtl fabric_c
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_curtain_diff.png
 	map_Kd textures/sponza_curtain_diff.png
-	map_Kn textures/sponza_curtain_blue_diff_NRM.png
 
 newmtl fabric_f
-	Ns 10.0000
-	Ni 1.5000
+	Ns 0.1000
+	Ni 1.0000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -329,30 +289,29 @@ newmtl fabric_f
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_curtain_green_diff.png
 	map_Kd textures/sponza_curtain_green_diff.png
-	map_Kn textures/sponza_curtain_blue_diff_NRM.png
 
 newmtl chain
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
+	Ks 0.0100 0.0100 0.0100
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/chain_texture.png
 	map_Kd textures/chain_texture.png
 	map_d textures/chain_texture_mask.png
-	map_Kn textures/chain_texture_ddn.png
+	map_bump textures/chain_texture_bump.png
 
 newmtl vase_hanging
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -360,14 +319,13 @@ newmtl vase_hanging
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/vase_hanging.png
 	map_Kd textures/vase_hanging.png
-	map_Kn textures/vase_hanging_NRM.png
 
 newmtl vase
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -375,14 +333,14 @@ newmtl vase
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/vase_dif.png
 	map_Kd textures/vase_dif.png
-	map_Kn textures/vase_ddn.png
+	map_bump textures/vase_bump.png
 
 newmtl Material__25
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -390,14 +348,14 @@ newmtl Material__25
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/lion.png
 	map_Kd textures/lion.png
-	map_Kn textures/lion_ddn.png
+	map_bump textures/lion_bump.png
 
 newmtl roof
 	Ns 10.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000
+	Tf 1.0000 1.0000 1.0000 
 	illum 2
 	Ka 0.5880 0.5880 0.5880
 	Kd 0.5880 0.5880 0.5880
@@ -405,4 +363,3 @@ newmtl roof
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/sponza_roof_diff.png
 	map_Kd textures/sponza_roof_diff.png
-	map_Kn textures/sponza_roof_diff_NRM.png

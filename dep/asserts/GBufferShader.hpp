@@ -17,7 +17,6 @@ public:
 	GBufferShader(const GBufferShader &) = delete;
 	GBufferShader& operator= (const GBufferShader &) = delete;
 private:
-	GLint unif_uHaveNormalTexture;
 	GLint unif_uProjection;
 	GLint unif_uView;
 public:
@@ -56,12 +55,9 @@ public:
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		unif_uHaveNormalTexture = glGetUniformLocation(program_, "uHaveNormalTexture");
 		unif_uProjection = glGetUniformLocation(program_, "uProjection");
 		unif_uView = glGetUniformLocation(program_, "uView");
 	}
-	void SetUHaveNormalTexture(bool v) { glProgramUniform1i(program_, unif_uHaveNormalTexture, v); }
-	GLint GetUHaveNormalTextureLocation() const { return unif_uHaveNormalTexture; };
 	void SetUProjection(const glm::mat4 &v) { glProgramUniformMatrix4fv(program_, unif_uProjection, 1, GL_FALSE, glm::value_ptr(v)); }
 	GLint GetUProjectionLocation() const { return unif_uProjection; };
 	void SetUView(const glm::mat4 &v) { glProgramUniformMatrix4fv(program_, unif_uView, 1, GL_FALSE, glm::value_ptr(v)); }
