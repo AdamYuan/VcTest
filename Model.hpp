@@ -23,7 +23,8 @@ struct Mesh
 {
 	GLuint diffuse_texture;
 	mygl3::VertexObject<false> object;
-	void Load(const std::vector<Vertex> &vertices);
+	std::vector<Vertex> vertices;
+	void Load();
 };
 
 class Model
@@ -31,6 +32,8 @@ class Model
 private:
 	std::vector<Mesh> meshes_;
 	std::map<std::string, mygl3::Texture2D> textures_;
+
+	GLuint load_texture(const std::string &filename);
 
 public:
 	void Load(const char *filename);

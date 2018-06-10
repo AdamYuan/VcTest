@@ -9,11 +9,11 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make
 ```
 ## Usage
-	W, A, S, D, L-Shift, Space: Move around
-	Esc: Toggle window focus
-	C: Toggle albedo
-	V: Toggle voxel cone tracing
-	E: Toggle showing edge 
+* W, A, S, D, L-Shift, Space: Move around
+* Esc: Toggle window focus
+* C: Toggle albedo
+* V: Toggle voxel cone tracing
+* E: Toggle showing edge 
 ## Screenshots
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/1.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/2.png)
