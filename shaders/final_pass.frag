@@ -23,7 +23,7 @@ uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
 uniform float uVoxelWorldSize;
 uniform ivec2 uResolution;
 
-uniform bool uEnableIndirectTrace, uShowAlbedo, uDebugVoxel, uShowEdge;
+uniform bool uEnableIndirectTrace, uShowAlbedo, uShowEdge;
 
 uniform vec3 uCamPosition;
 
@@ -163,26 +163,21 @@ void main()
 
 	if(albedo.a > 0.5f)
 	{
-		if(uDebugVoxel)
-			final_color = ConeTrace(uCamPosition, vViewDir, 0.0f);
-		else
-		{
-			vec4 pos4 = texture(uGPosition, vTexcoords);
-			vec3 position = pos4.rgb;
-			float depth = pos4.a;
-			vec3 normal = texture(uGNormal, vTexcoords).rgb * 2.0f - 1.0f;
-			vec3 trace_result = texture(uHalfTraceResult, vTexcoords).rgb;
+		vec4 pos4 = texture(uGPosition, vTexcoords);
+		vec3 position = pos4.rgb;
+		float depth = pos4.a;
+		vec3 normal = texture(uGNormal, vTexcoords).rgb * 2.0f - 1.0f;
+		vec3 trace_result = texture(uHalfTraceResult, vTexcoords).rgb;
 
-			vec3 tangent, bitangent;
-			ons(normal, tangent, bitangent);
+		vec3 tangent, bitangent;
+		ons(normal, tangent, bitangent);
 
-			final_color = DirectLight(normal) * CalculateShadow(position);
-			if(uEnableIndirectTrace)
-				final_color += IndirectLight(depth, normal, position + normal * 0.5f, mat3(tangent, normal, bitangent));
-			if(uShowAlbedo) 
-				final_color *= albedo.rgb;
-			final_color *= kLightColor;
-		}
+		final_color = DirectLight(normal) * CalculateShadow(position);
+		if(uEnableIndirectTrace)
+			final_color += IndirectLight(depth, normal, position + normal * 0.5f, mat3(tangent, normal, bitangent));
+		if(uShowAlbedo) 
+			final_color *= albedo.rgb;
+		final_color *= kLightColor;
 	}
 	else
 		final_color = texture(uSkyboxTexture, vViewDir).rgb;

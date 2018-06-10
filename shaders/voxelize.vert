@@ -1,9 +1,7 @@
 #version 450 core
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec3 aTangent;
-layout (location = 3) in vec3 aBitangent;
-layout (location = 4) in vec2 aTexcoords;
+layout (location = 2) in vec2 aTexcoords;
 
 out vec2 vTexcoords;
 out vec4 vLightspaceFragPos;
