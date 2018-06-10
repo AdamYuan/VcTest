@@ -12,11 +12,6 @@ const ivec3 kOffsets[8] =
 	{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, 
 	{1, 0, 0}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}, 
 };
-const int kOpposites[8][3] = 
-{
-	{4, 2, 1}, {5, 3, 0}, {6, 0, 3}, {7, 1, 2},
-	{0, 6, 5}, {1, 7, 4}, {2, 4, 7}, {3, 5, 6}
-};
 const int kSides[6][4] = 
 {
 	{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 4, 5}, 
@@ -46,7 +41,7 @@ void main()
 
 		vec4 sum = vec4(0.0f);
 		for(int b = 0; b < 4; ++b)
-			sum += arr[kSides[f][b]] + arr[kOpposites[kSides[f][b]][f>>1]] * (1.0f - arr[kSides[f][b]].a);
+			sum += arr[kSides[f][b]] + arr[kSides[f % 2 == 0 ? f + 1 : f - 1][b]] * (1.0f - arr[kSides[f][b]].a);
 		sum *= 0.25f;
 
 		imageStore(uVoxelTextureMipmaps[f], mipmap_pos, sum);

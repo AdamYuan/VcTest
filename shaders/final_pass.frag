@@ -106,6 +106,7 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 
 vec3 IndirectLight(in float depth, in vec3 normal, in vec3 start_pos, in mat3 matrix)
 {
+	//edge detection
 	float sample_depth;
 	vec3 sample_normal;
 	bool edge = false;
@@ -117,10 +118,11 @@ vec3 IndirectLight(in float depth, in vec3 normal, in vec3 start_pos, in mat3 ma
 		else
 		{
 			sample_normal = texture(uGNormal, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).rgb * 2.0f - 1.0f;
-			if(dot(normal, sample_normal) < 0.7f)
+			if(dot(normal, sample_normal) < 0.8f)
 				edge = true;
 		}
 	}
+
 	if(edge)
 	{
 		if(uShowEdge)
@@ -128,7 +130,7 @@ vec3 IndirectLight(in float depth, in vec3 normal, in vec3 start_pos, in mat3 ma
 		vec3 color = vec3(0.0f);
 		for(int i = 0; i < kDiffuseConeNum; i++)
 			color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
-		return color;// * 3.14159f;
+		return color;
 	}
 	return texture(uHalfTraceResult, vTexcoords).rgb;
 }
