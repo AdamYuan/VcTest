@@ -17,7 +17,7 @@ private:
 	mygl3::Camera camera_;
 	mygl3::Framerate framerate_;
 	Renderer renderer_;
-	bool debug_voxel_, indirect_trace_, show_albedo_, control_;
+	bool debug_voxel_, indirect_trace_, show_albedo_, show_edge_, control_;
 	void init_window();
 	void cam_control();
 	static void key_callback(GLFWwindow *window, int key, int, int action, int);

@@ -10,7 +10,8 @@
 #include "Skybox.hpp"
 #include "Voxelize.hpp"
 #include "GBuffer.hpp"
-#include <asserts/TraceShader.hpp>
+#include "ConeTracer.hpp"
+#include <asserts/FinalShader.hpp>
 
 class Renderer
 {
@@ -19,13 +20,14 @@ private:
 	ShadowMap shadow_map_;
 	Skybox skybox_;
 	GBuffer gbuffer_;
+	ConeTracer cone_tracer_;
 
-	asserts::TraceShader trace_shader_;
+	asserts::FinalShader final_shader_;
 
 public:
 	void Initialize();
 
-	void Render(bool debug_voxel, bool indirect_trace, bool show_albedo);
+	void Render(bool debug_voxel, bool indirect_trace, bool show_albedo, bool show_edge);
 };
 
 

@@ -12,6 +12,11 @@ begin GBufferShader
 	u mat4 uView
 end
 
+begin HalfShader
+	src shaders/quad.vert GL_VERTEX_SHADER
+	src shaders/half.frag GL_FRAGMENT_SHADER
+end
+
 begin ShadowShader
 	src shaders/shadow.frag GL_FRAGMENT_SHADER
 	src shaders/shadow.vert GL_VERTEX_SHADER
@@ -34,6 +39,18 @@ begin TraceShader
 	src shaders/trace.vert GL_VERTEX_SHADER
 	u mat4 uView
 	u mat4 uProjection
+	u ivec3 uVoxelDimension
+	u vec3 uVoxelGridRangeMin
+	u vec3 uVoxelGridRangeMax
+	u float uVoxelWorldSize
+	u vec3 uCamPosition
+end
+
+begin FinalShader
+	src shaders/final_pass.frag GL_FRAGMENT_SHADER
+	src shaders/trace.vert GL_VERTEX_SHADER
+	u mat4 uView
+	u mat4 uProjection
 	u mat4 uLightMatrix
 	u vec3 uLightDir
 	u ivec3 uVoxelDimension
@@ -43,7 +60,10 @@ begin TraceShader
 	u bool uEnableIndirectTrace
 	u bool uShowAlbedo
 	u bool uDebugVoxel
+	u bool uShowEdge
 	u vec3 uCamPosition
+
+	u ivec2 uResolution
 end
 
 begin SkyboxShader

@@ -14,7 +14,7 @@ void GBuffer::Initialize()
 	position_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 
 	normal_.Initialize();
-	normal_.Load(mygl3::ImageInfo(kWidth, kHeight, 0, GL_RGBA8, 0, 0, nullptr), false);
+	normal_.Load(mygl3::ImageInfo(kWidth, kHeight, 0, GL_RGB8, 0, 0, nullptr), false);
 	normal_.SetWrapFilter(GL_CLAMP_TO_EDGE);
 	normal_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 
@@ -23,32 +23,65 @@ void GBuffer::Initialize()
 	albedo_.SetWrapFilter(GL_CLAMP_TO_EDGE);
 	albedo_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 
-	rbo_.Initialize();
-	rbo_.Load(GL_DEPTH_COMPONENT, kWidth, kHeight);
+	half_position_.Initialize();
+	half_position_.Load(mygl3::ImageInfo(kHalfWidth, kHalfHeight, 0, GL_RGBA32F, 0, 0, nullptr), false);
+	half_position_.SetWrapFilter(GL_CLAMP_TO_EDGE);
+	half_position_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 
-	fbo_.Initialize();
-	fbo_.AttachTexture(position_, GL_COLOR_ATTACHMENT0);
-	fbo_.AttachTexture(normal_, GL_COLOR_ATTACHMENT1);
-	fbo_.AttachTexture(albedo_, GL_COLOR_ATTACHMENT2);
-	fbo_.AttachRenderbuffer(rbo_, GL_DEPTH_ATTACHMENT);
+	half_normal_.Initialize();
+	half_normal_.Load(mygl3::ImageInfo(kHalfWidth, kHalfHeight, 0, GL_RGB8, 0, 0, nullptr), false);
+	half_normal_.SetWrapFilter(GL_CLAMP_TO_EDGE);
+	half_normal_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 
+	gbuffer_rbo_.Initialize();
+	gbuffer_rbo_.Load(GL_DEPTH_COMPONENT, kWidth, kHeight);
+
+	gbuffer_fbo_.Initialize();
+	gbuffer_fbo_.AttachTexture(position_, GL_COLOR_ATTACHMENT0);
+	gbuffer_fbo_.AttachTexture(normal_, GL_COLOR_ATTACHMENT1);
+	gbuffer_fbo_.AttachTexture(albedo_, GL_COLOR_ATTACHMENT2);
+	gbuffer_fbo_.AttachRenderbuffer(gbuffer_rbo_, GL_DEPTH_ATTACHMENT);
 	GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-	glNamedFramebufferDrawBuffers(fbo_.Get(), 3, attachments);
+	glNamedFramebufferDrawBuffers(gbuffer_fbo_.Get(), 3, attachments);
 
-	shader_.Initialize();
-	shader_.SetUProjection(res::cam_projection);
+	half_fbo_.Initialize();
+	half_fbo_.AttachTexture(half_position_, GL_COLOR_ATTACHMENT0);
+	half_fbo_.AttachTexture(half_normal_, GL_COLOR_ATTACHMENT1);
+	glNamedFramebufferDrawBuffers(half_fbo_.Get(), 2, attachments);
+
+	gbuffer_shader_.Initialize();
+	gbuffer_shader_.SetUProjection(res::cam_projection);
+
+	half_shader_.Initialize();
 }
 
 void GBuffer::Update()
 {
-	mygl3::FrameBufferBinder binder(fbo_);
+	{
+		mygl3::FrameBufferBinder binder(gbuffer_fbo_);
 
-	glViewport(0, 0, kWidth, kHeight);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glCullFace(GL_BACK);
+		glViewport(0, 0, kWidth, kHeight);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_BACK);
 
-	shader_.Use();
-	shader_.SetUView(res::cam_view);
+		gbuffer_shader_.Use();
+		gbuffer_shader_.SetUView(res::cam_view);
 
-	res::sponza_model.Render(shader_.GetUHaveNormalTextureLocation());
+		res::sponza_model.Render(gbuffer_shader_.GetUHaveNormalTextureLocation());
+	}
+
+	{
+		mygl3::FrameBufferBinder binder(half_fbo_);
+
+		glDisable(GL_DEPTH_TEST);
+		glViewport(0, 0, kHalfWidth, kHalfHeight);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		position_.Bind(0);
+		normal_.Bind(1);
+		half_shader_.Use();
+		res::quad_object.Render(GL_TRIANGLES);
+
+		glEnable(GL_DEPTH_TEST);
+	}
 }
