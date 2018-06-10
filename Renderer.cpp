@@ -35,11 +35,11 @@ void Renderer::Initialize()
 	final_shader_.SetUResolution(glm::ivec2(kWidth, kHeight));
 }
 
-void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, bool show_edge)
+void Renderer::Render(bool indirect_trace, bool show_albedo, bool show_edge)
 {
 	gbuffer_.Update();
 
-	if(indirect_trace && !debug_voxel)
+	if(indirect_trace)
 		cone_tracer_.Update(gbuffer_, voxelize_);
 
 	glViewport(0, 0, kWidth, kHeight);
@@ -63,7 +63,6 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, b
 	//set flags
 	final_shader_.SetUEnableIndirectTrace(indirect_trace);
 	final_shader_.SetUShowAlbedo(show_albedo);
-	final_shader_.SetUDebugVoxel(debug_voxel);
 	final_shader_.SetUShowEdge(show_edge);
 	res::quad_object.Render(GL_TRIANGLES);
 

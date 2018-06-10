@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 constexpr int kWidth = 1440, kHeight = 900;
-constexpr int kHalfWidth = kWidth >> 1, kHalfHeight = kHeight >> 1;
+constexpr int kHalfWidth = kWidth / 2, kHalfHeight = kHeight / 2;
 constexpr double kMouseX = kWidth / 2.0, kMouseY = kHeight / 2.0;
 
 constexpr int kShadowWidth = 2048, kShadowHeight = 2048;

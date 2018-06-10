@@ -27,7 +27,6 @@ private:
 	GLint unif_uVoxelWorldSize;
 	GLint unif_uEnableIndirectTrace;
 	GLint unif_uShowAlbedo;
-	GLint unif_uDebugVoxel;
 	GLint unif_uShowEdge;
 	GLint unif_uCamPosition;
 	GLint unif_uResolution;
@@ -77,7 +76,6 @@ public:
 		unif_uVoxelWorldSize = glGetUniformLocation(program_, "uVoxelWorldSize");
 		unif_uEnableIndirectTrace = glGetUniformLocation(program_, "uEnableIndirectTrace");
 		unif_uShowAlbedo = glGetUniformLocation(program_, "uShowAlbedo");
-		unif_uDebugVoxel = glGetUniformLocation(program_, "uDebugVoxel");
 		unif_uShowEdge = glGetUniformLocation(program_, "uShowEdge");
 		unif_uCamPosition = glGetUniformLocation(program_, "uCamPosition");
 		unif_uResolution = glGetUniformLocation(program_, "uResolution");
@@ -102,8 +100,6 @@ public:
 	GLint GetUEnableIndirectTraceLocation() const { return unif_uEnableIndirectTrace; };
 	void SetUShowAlbedo(bool v) { glProgramUniform1i(program_, unif_uShowAlbedo, v); }
 	GLint GetUShowAlbedoLocation() const { return unif_uShowAlbedo; };
-	void SetUDebugVoxel(bool v) { glProgramUniform1i(program_, unif_uDebugVoxel, v); }
-	GLint GetUDebugVoxelLocation() const { return unif_uDebugVoxel; };
 	void SetUShowEdge(bool v) { glProgramUniform1i(program_, unif_uShowEdge, v); }
 	GLint GetUShowEdgeLocation() const { return unif_uShowEdge; };
 	void SetUCamPosition(const glm::vec3 &v) { glProgramUniform3fv(program_, unif_uCamPosition, 1, glm::value_ptr(v)); }
