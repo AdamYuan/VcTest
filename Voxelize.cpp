@@ -18,17 +18,28 @@ void Voxelize::Initialize()
 	printf("Mipmap level: %d\n", max_mipmap_level_);
 	printf("Voxel dimension: (%d, %d, %d)\n", kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z);
 
-	//base voxel texture
-	voxel_texture_.Initialize();
 	auto *data = new GLubyte[kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4];
 	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
-	voxel_texture_.Load(mygl3::ImageInfo(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z,
-										 GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, data), false);
-	delete[] data;
 	GLfloat border_color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	glTextureParameterfv(voxel_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
-	voxel_texture_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
-	voxel_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
+
+	//normal
+	normal_texture_.Initialize();
+	normal_texture_.Load(mygl3::ImageInfo(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z,
+										  GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, data), false);
+	glTextureParameterfv(normal_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
+	normal_texture_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
+	normal_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
+
+	//albedo
+	albedo_texture_.Initialize();
+	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
+	albedo_texture_.Load(mygl3::ImageInfo(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z,
+										 GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, data), false);
+	glTextureParameterfv(albedo_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
+	albedo_texture_.SetSizeFilter(GL_LINEAR, GL_LINEAR);
+	albedo_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
+
+	delete[] data;
 
 	//mipmap voxel textures
 	for(auto &t : mipmap_textures_)
@@ -37,7 +48,7 @@ void Voxelize::Initialize()
 		t.Load(mygl3::ImageInfo(kVoxelDimension.x / 2, kVoxelDimension.y / 2, kVoxelDimension.z / 2,
 								GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, nullptr), true);
 		glTextureParameterfv(t.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
-		t.SetSizeFilter(GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST);
+		t.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 		t.SetWrapFilter(GL_CLAMP_TO_BORDER);
 	}
 
@@ -55,7 +66,8 @@ void Voxelize::Initialize()
 void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 {
 	glDisable(GL_CULL_FACE); glDisable(GL_DEPTH_TEST);
-	glBindImageTexture(7, voxel_texture_.Get(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(6, normal_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(7, albedo_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, 1000, 1000);
@@ -79,7 +91,7 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 			glBindImageTexture(f, mipmap_textures_[f].Get(), level - 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		if(level == 1)
-			voxel_texture_.Bind(0);
+			albedo_texture_.Bind(0);
 		else
 		{
 			for(GLuint f = 0; f < 6; ++f)

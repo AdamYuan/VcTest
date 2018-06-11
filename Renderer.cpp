@@ -53,7 +53,7 @@ void Renderer::Render(bool indirect_trace, bool show_albedo, bool show_edge)
 	cone_tracer_.Get().Bind(3);
 	skybox_.Get().Bind(4);
 	shadow_map_.Get().Bind(5);
-	voxelize_.Get().Bind(6);
+	voxelize_.GetAlbedo().Bind(6);
 	for(int i = 0; i < 6; ++i) voxelize_.GetMipmap()[i].Bind(i + 9u);
 
 	final_shader_.Use();

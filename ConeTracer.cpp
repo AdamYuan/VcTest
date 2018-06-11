@@ -39,7 +39,7 @@ void ConeTracer::Update(const GBuffer &gbuffer, const Voxelize &voxels)
 	glClear(GL_COLOR_BUFFER_BIT);
 	gbuffer.GetHalfPositionTexture().Bind(0);
 	gbuffer.GetHalfNormalTexture().Bind(1);
-	voxels.Get().Bind(6);
+	voxels.GetAlbedo().Bind(6);
 	for(int i = 0; i < 6; ++i) voxels.GetMipmap()[i].Bind(i + 7u);
 
 	trace_shader_.Use();

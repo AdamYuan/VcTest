@@ -37,8 +37,13 @@ public:
 		std::ifstream in; std::string str;
 		char log[100000]; int success;
 		in.open("shaders/final_pass.frag");
-		std::getline(in, str, '\0');
-		in.close();
+		if(in.is_open()) {
+			std::getline(in, str, '\0');
+			in.close();
+		} else {
+			str.clear();
+			printf("[GLSLGEN ERROR] failed to load shaders/final_pass.frag\n");
+		}
 		const char *GL_FRAGMENT_SHADER_src = str.c_str();
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
@@ -46,14 +51,19 @@ public:
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 		if(!success) {
 			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("compile error in shaders/final_pass.frag:\n%s\n", log);
+			printf("[GLSLGEN ERROR] compile error in shaders/final_pass.frag:\n%s\n", log);
 		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/trace.vert");
-		std::getline(in, str, '\0');
-		in.close();
+		in.open("shaders/quad_dir.vert");
+		if(in.is_open()) {
+			std::getline(in, str, '\0');
+			in.close();
+		} else {
+			str.clear();
+			printf("[GLSLGEN ERROR] failed to load shaders/quad_dir.vert\n");
+		}
 		const char *GL_VERTEX_SHADER_src = str.c_str();
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
@@ -61,7 +71,7 @@ public:
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 		if(!success) {
 			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("compile error in shaders/trace.vert:\n%s\n", log);
+			printf("[GLSLGEN ERROR] compile error in shaders/quad_dir.vert:\n%s\n", log);
 		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);

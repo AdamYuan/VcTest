@@ -25,9 +25,14 @@ public:
 		program_ = glCreateProgram();
 		std::ifstream in; std::string str;
 		char log[100000]; int success;
-		in.open("shaders/mipmap.comp");
-		std::getline(in, str, '\0');
-		in.close();
+		in.open("shaders/voxel_mipmap.comp");
+		if(in.is_open()) {
+			std::getline(in, str, '\0');
+			in.close();
+		} else {
+			str.clear();
+			printf("[GLSLGEN ERROR] failed to load shaders/voxel_mipmap.comp\n");
+		}
 		const char *GL_COMPUTE_SHADER_src = str.c_str();
 		shader = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(shader, 1, &GL_COMPUTE_SHADER_src, nullptr);
@@ -35,7 +40,7 @@ public:
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 		if(!success) {
 			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("compile error in shaders/mipmap.comp:\n%s\n", log);
+			printf("[GLSLGEN ERROR] compile error in shaders/voxel_mipmap.comp:\n%s\n", log);
 		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);

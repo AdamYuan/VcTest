@@ -1,5 +1,7 @@
 #version 450 core
 
+#define PI 3.14159265f
+
 out vec4 FragColor;
 
 in vec2 vTexcoords;
@@ -11,9 +13,8 @@ layout (binding = 2) uniform sampler2D uGAlbedo;
 layout (binding = 3) uniform sampler2D uHalfTraceResult;
 layout (binding = 4) uniform samplerCube uSkyboxTexture;
 layout (binding = 5) uniform sampler2DShadow uShadowMap;
-layout (binding = 6) uniform sampler3D uVoxelTexture;
-layout (binding = 9) uniform sampler3D uVoxelTextureMipmaps[6];
-
+layout (binding = 6) uniform sampler3D uVoxelAlbedo;
+layout (binding = 9) uniform sampler3D uVoxelAlbedoMipmaps[6];
 
 uniform mat4 uLightMatrix;
 uniform vec3 uLightDir;
@@ -33,29 +34,26 @@ const vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f);
 const int kDiffuseConeNum = 6;
 const vec3 kConeDirections[6] = 
 {
-	vec3(0, 1, 0),
-	vec3(0, 0.5, 0.866025),
-	vec3(0.823639, 0.5, 0.267617),
-	vec3(0.509037, 0.5, -0.700629),
-	vec3(-0.509037, 0.5, -0.700629),
-	vec3(-0.823639, 0.5, 0.267617)
+	vec3(0, 0, 1),
+	vec3(0, 0.866025, 0.5),
+	vec3(0.823639, 0.267617, 0.5),
+	vec3(0.509037, -0.700629, 0.5),
+	vec3(-0.509037, -0.700629, 0.5),
+	vec3(-0.823639, 0.267617, 0.5)
 };
 const float kConeWeights[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};
 const ivec2 kEdgeTests[8] = {{0, 1}, {1, 0}, {1, 1}, {0, -1}, {-1, 0}, {-1, -1}, {1, -1}, {-1, 1}};
 
-void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
+mat3 GetTBN(in vec3 normal)
 {
-	if (abs(v1.x) > abs(v1.y)) 
-	{
-		float inv_len = inversesqrt(v1.x * v1.x + v1.z * v1.z);
-		v2 = vec3(-v1.z * inv_len, 0.0f, v1.x * inv_len);
-	} 
-	else 
-	{
-		float inv_len = inversesqrt(v1.y * v1.y + v1.z * v1.z);
-		v2 = vec3(0.0f, v1.z * inv_len, -v1.y * inv_len);
-	}
-	v3 = cross(v1, v2);
+	vec3 tangent;
+	vec3 v1 = cross(normal, vec3(0.0f, 0.0f, 1.0f)), v2 = cross(normal, vec3(0.0f, 1.0f, 0.0f));
+	if(dot(v1, v1) > dot(v2, v2))
+		tangent = v1;
+	else
+		tangent = v2;
+	
+	return mat3(tangent, cross(tangent, normal), normal);
 }
 
 vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
@@ -65,14 +63,14 @@ vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weig
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);
-	if(weights.x > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
-	if(weights.y > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
-	if(weights.z > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	if(weights.x > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
+	if(weights.y > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
+	if(weights.z > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
 	if(lod < 1.0f)
-		return mix(texture(uVoxelTexture, voxel_uv), mipmap_color, lod);
+		return mix(texture(uVoxelAlbedo, voxel_uv), mipmap_color, lod);
 	else
 		return mipmap_color;
 }
@@ -125,7 +123,7 @@ vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
 	vec3 color = vec3(0.0f);
 	for(int i = 0; i < kDiffuseConeNum; i++)
 		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
-	return color;
+	return color * PI;
 }
 
 float CalculateShadow(in vec3 position)
@@ -162,9 +160,6 @@ void main()
 		vec3 normal = texture(uGNormal, vTexcoords).rgb * 2.0f - 1.0f;
 		vec3 trace_result = texture(uHalfTraceResult, vTexcoords).rgb;
 
-		vec3 tangent, bitangent;
-		ons(normal, tangent, bitangent);
-
 		final_color = DirectLight(normal) * CalculateShadow(position);
 
 		bool edge = DetectEdge(depth, normal);
@@ -175,7 +170,7 @@ void main()
 		else if(uEnableIndirectTrace)
 		{
 			if(edge)
-				final_color += IndirectLight(position + normal * 0.5f, mat3(tangent, normal, bitangent));
+				final_color += IndirectLight(position + normal * uVoxelWorldSize, GetTBN(normal));
 			else
 				final_color += texture(uHalfTraceResult, vTexcoords).rgb;
 		}
@@ -186,7 +181,7 @@ void main()
 	else
 		final_color = texture(uSkyboxTexture, vViewDir).rgb;
 
-	vec3 mapped = vec3(1.0f) - exp(-final_color * 5.0f);
+	vec3 mapped = vec3(1.0f) - exp(-final_color * 1.5f);
 	mapped = pow(mapped, vec3(1.0f / 2.2f));
 	FragColor = vec4(mapped, 1.0f);
 }

@@ -1,5 +1,7 @@
 #version 450 core
 
+#define PI 3.14159265f
+
 out vec3 FragColor;
 
 in vec2 vTexcoords;
@@ -7,8 +9,8 @@ in vec3 vViewDir;
 
 layout (binding = 0) uniform sampler2D uHalfGPosition;
 layout (binding = 1) uniform sampler2D uHalfGNormal;
-layout (binding = 6) uniform sampler3D uVoxelTexture;
-layout (binding = 7) uniform sampler3D uVoxelTextureMipmaps[6];
+layout (binding = 6) uniform sampler3D uVoxelAlbedo;
+layout (binding = 7) uniform sampler3D uVoxelAlbedoMipmaps[6];
 
 uniform ivec3 uVoxelDimension;
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
@@ -19,28 +21,25 @@ uniform vec3 uCamPosition;
 const int kDiffuseConeNum = 6;
 const vec3 kConeDirections[6] = 
 {
-	vec3(0, 1, 0),
-	vec3(0, 0.5, 0.866025),
-	vec3(0.823639, 0.5, 0.267617),
-	vec3(0.509037, 0.5, -0.700629),
-	vec3(-0.509037, 0.5, -0.700629),
-	vec3(-0.823639, 0.5, 0.267617)
+	vec3(0, 0, 1),
+	vec3(0, 0.866025, 0.5),
+	vec3(0.823639, 0.267617, 0.5),
+	vec3(0.509037, -0.700629, 0.5),
+	vec3(-0.509037, -0.700629, 0.5),
+	vec3(-0.823639, 0.267617, 0.5)
 };
 const float kConeWeights[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};
 
-void ons(in vec3 v1, inout vec3 v2, out vec3 v3)
+mat3 GetTBN(in vec3 normal)
 {
-	if (abs(v1.x) > abs(v1.y)) 
-	{
-		float inv_len = inversesqrt(v1.x * v1.x + v1.z * v1.z);
-		v2 = vec3(-v1.z * inv_len, 0.0f, v1.x * inv_len);
-	} 
-	else 
-	{
-		float inv_len = inversesqrt(v1.y * v1.y + v1.z * v1.z);
-		v2 = vec3(0.0f, v1.z * inv_len, -v1.y * inv_len);
-	}
-	v3 = cross(v1, v2);
+	vec3 tangent;
+	vec3 v1 = cross(normal, vec3(0.0f, 0.0f, 1.0f)), v2 = cross(normal, vec3(0.0f, 1.0f, 0.0f));
+	if(dot(v1, v1) > dot(v2, v2))
+		tangent = v1;
+	else
+		tangent = v2;
+	
+	return mat3(tangent, cross(tangent, normal), normal);
 }
 
 vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
@@ -50,14 +49,14 @@ vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weig
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);
-	if(weights.x > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
-	if(weights.y > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
-	if(weights.z > 0.05f)
-		mipmap_color += textureLod(uVoxelTextureMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	if(weights.x > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
+	if(weights.y > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
+	if(weights.z > 0.0f)
+		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
 	if(lod < 1.0f)
-		return mix(texture(uVoxelTexture, voxel_uv), mipmap_color, lod);
+		return mix(texture(uVoxelAlbedo, voxel_uv), mipmap_color, lod);
 	else
 		return mipmap_color;
 }
@@ -96,27 +95,20 @@ vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
 	for(int i = 0; i < kDiffuseConeNum; i++)
 		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
 
-	return color;// * 3.14159f;
+	return color * PI;
 }
 
 void main()
 {
-	vec3 normal = texture(uHalfGNormal, vTexcoords).rgb * 2.0f - 1.0f;
-
-	vec3 color;
+	vec3 color, normal = texture(uHalfGNormal, vTexcoords).rgb * 2.0f - 1.0f;
 
 	if(length(normal) > 0.5f)
 	{
 		vec3 position = texture(uHalfGPosition, vTexcoords).rgb;
-		vec3 tangent, bitangent;
-		ons(normal, tangent, bitangent);
-
-		color = IndirectLight(position + normal * 0.5f, mat3(tangent, normal, bitangent));
-		//color = position;
+		color = IndirectLight(position + normal * uVoxelWorldSize, GetTBN(normal));
 	}
 	else
 		color = vec3(0.0f);
 
-	//FragColor = vec4(color, 1.0f);
 	FragColor = color;
 }

@@ -44,15 +44,15 @@ void Model::Load(const char *filename)
 		size_t index_offset = 0, face = 0;
 
 		// Loop over faces(polygon)
-		for(const auto &fv : shape.mesh.num_face_vertices)
+		for(const auto &num_face_vertex : shape.mesh.num_face_vertices)
 		{
 			// Loop over vertices in the face.
-			for (size_t v = 0; v < fv; v++)
+			for (size_t v = 0; v < num_face_vertex; v++)
 			{
 				// access to vertex
 				tinyobj::index_t index = shape.mesh.indices[index_offset + v];
 
-				Vertex vertex = {};
+				Vertex vertex{};
 				vertex.position = {
 						attrib.vertices[3 * index.vertex_index + 0],
 						attrib.vertices[3 * index.vertex_index + 1],
@@ -71,7 +71,7 @@ void Model::Load(const char *filename)
 
 				meshes_[shape.mesh.material_ids[face]].vertices.push_back(vertex);
 			}
-			index_offset += fv;
+			index_offset += num_face_vertex;
 			face ++;
 		}
 	}
@@ -99,6 +99,7 @@ GLuint Model::load_texture(const std::string &filename)
 	if(iter == textures_.end())
 	{
 		textures_.insert(std::make_pair(filename, mygl3::Texture2D{}));
+
 		iter = textures_.find(filename);
 		iter->second.Initialize();
 		iter->second.Load(mygl3::ImageLoader(filename.c_str()).GetInfo(), true);

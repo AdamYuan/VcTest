@@ -11,7 +11,7 @@
 #include <mygl3/utils/camera.hpp>
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 struct Vertex
 {
@@ -31,7 +31,7 @@ class Model
 {
 private:
 	std::vector<Mesh> meshes_;
-	std::map<std::string, mygl3::Texture2D> textures_;
+	std::unordered_map<std::string, mygl3::Texture2D> textures_;
 
 	GLuint load_texture(const std::string &filename);
 
