@@ -9,8 +9,8 @@ in vec3 vViewDir;
 
 layout (binding = 0) uniform sampler2D uHalfGPosition;
 layout (binding = 1) uniform sampler2D uHalfGNormal;
-layout (binding = 6) uniform sampler3D uVoxelAlbedo;
-layout (binding = 7) uniform sampler3D uVoxelAlbedoMipmaps[6];
+layout (binding = 6) uniform sampler3D uVoxelRadiance;
+layout (binding = 7) uniform sampler3D uVoxelRadianceMipmaps[6];
 
 uniform ivec3 uVoxelDimension;
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
@@ -18,7 +18,6 @@ uniform float uVoxelWorldSize;
 
 uniform vec3 uCamPosition;
 
-const int kDiffuseConeNum = 6;
 const vec3 kConeDirections[6] = 
 {
 	vec3(0, 0, 1),
@@ -38,7 +37,7 @@ mat3 GetTBN(in vec3 normal)
 		tangent = v1;
 	else
 		tangent = v2;
-	
+
 	return mat3(tangent, cross(tangent, normal), normal);
 }
 
@@ -49,14 +48,17 @@ vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weig
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);
-	if(weights.x > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
-	if(weights.y > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
-	if(weights.z > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	if(lod > 0.0f)
+	{
+		if(weights.x > 0.0f)
+			mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
+		if(weights.y > 0.0f)
+			mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
+		if(weights.z > 0.0f)
+			mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+	}
 	if(lod < 1.0f)
-		return mix(texture(uVoxelAlbedo, voxel_uv), mipmap_color, lod);
+		return mix(texture(uVoxelRadiance, voxel_uv), mipmap_color, max(lod, 0.0f));
 	else
 		return mipmap_color;
 }
@@ -77,7 +79,7 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 	{
 		vec3 pos = start_pos + dist * direction;
 
-		float diameter = max(uVoxelWorldSize, 2.0f * tan_half_angle * dist);
+		float diameter = 2.0f * tan_half_angle * dist;
 		float lod = log2(diameter / uVoxelWorldSize);
 		vec4 voxel_color = SampleVoxel(pos, lod, load_indices, weights);
 		color += voxel_color * (1.0f - color.a);
@@ -92,8 +94,8 @@ vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
 {
 	vec3 color = vec3(0.0f);
 
-	for(int i = 0; i < kDiffuseConeNum; i++)
-		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
+	for(int i = 0; i < 6; i++)
+		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.57735f);
 
 	return color * PI;
 }
@@ -105,7 +107,7 @@ void main()
 	if(length(normal) > 0.5f)
 	{
 		vec3 position = texture(uHalfGPosition, vTexcoords).rgb;
-		color = IndirectLight(position + normal * uVoxelWorldSize, GetTBN(normal));
+		color = IndirectLight(position + normal * 0.2f, GetTBN(normal));
 	}
 	else
 		color = vec3(0.0f);

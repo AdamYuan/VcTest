@@ -13,8 +13,8 @@ layout (binding = 2) uniform sampler2D uGAlbedo;
 layout (binding = 3) uniform sampler2D uHalfTraceResult;
 layout (binding = 4) uniform samplerCube uSkyboxTexture;
 layout (binding = 5) uniform sampler2DShadow uShadowMap;
-layout (binding = 6) uniform sampler3D uVoxelAlbedo;
-layout (binding = 9) uniform sampler3D uVoxelAlbedoMipmaps[6];
+layout (binding = 6) uniform sampler3D uVoxelRadiance;
+layout (binding = 9) uniform sampler3D uVoxelRadianceMipmaps[6];
 
 uniform mat4 uLightMatrix;
 uniform vec3 uLightDir;
@@ -31,17 +31,14 @@ uniform vec3 uCamPosition;
 const vec2 kShadowTexelSize = vec2(1.0f / 2048.0f);
 const vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f);
 
-const int kDiffuseConeNum = 6;
-const vec3 kConeDirections[6] = 
+const vec3 kConeDirections[4] = 
 {
-	vec3(0, 0, 1),
-	vec3(0, 0.866025, 0.5),
-	vec3(0.823639, 0.267617, 0.5),
-	vec3(0.509037, -0.700629, 0.5),
-	vec3(-0.509037, -0.700629, 0.5),
-	vec3(-0.823639, 0.267617, 0.5)
+    vec3(0.0f, 0.0f, 1.0f),
+    vec3(0.0f, 0.866025f, 0.5f),
+    vec3(0.754996f, -0.4330128f, 0.5f),
+    vec3(-0.754996f, -0.4330128f, 0.5f)
 };
-const float kConeWeights[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};
+const float kConeWeights[4] = {0.333333f, 0.222222f, 0.222222f, 0.222222f};
 const ivec2 kEdgeTests[8] = {{0, 1}, {1, 0}, {1, 1}, {0, -1}, {-1, 0}, {-1, -1}, {1, -1}, {-1, 1}};
 
 mat3 GetTBN(in vec3 normal)
@@ -64,13 +61,13 @@ vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weig
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);
 	if(weights.x > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
+		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;
 	if(weights.y > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
+		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;
 	if(weights.z > 0.0f)
-		mipmap_color += textureLod(uVoxelAlbedoMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
+		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;
 	if(lod < 1.0f)
-		return mix(texture(uVoxelAlbedo, voxel_uv), mipmap_color, lod);
+		return mix(texture(uVoxelRadiance, voxel_uv), mipmap_color, lod);
 	else
 		return mipmap_color;
 }
@@ -121,8 +118,8 @@ bool DetectEdge(in float depth, in vec3 normal)
 vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
 {
 	vec3 color = vec3(0.0f);
-	for(int i = 0; i < kDiffuseConeNum; i++)
-		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.577f);
+	for(int i = 0; i < 4; i++)
+		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.6f);
 	return color * PI;
 }
 
@@ -170,7 +167,7 @@ void main()
 		else if(uEnableIndirectTrace)
 		{
 			if(edge)
-				final_color += IndirectLight(position + normal * uVoxelWorldSize, GetTBN(normal));
+				final_color += IndirectLight(position + normal * 0.2f, GetTBN(normal));
 			else
 				final_color += texture(uHalfTraceResult, vTexcoords).rgb;
 		}

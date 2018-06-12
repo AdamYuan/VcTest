@@ -6,9 +6,10 @@ in vec4 gLightspaceFragPos;
 in vec3 gWorldPos;
 
 layout (binding = 0) uniform sampler2D uDiffuseTexture;
-layout (binding = 5) uniform sampler2DShadow uShadowMap;
+layout (binding = 1) uniform sampler2DShadow uShadowMap;
+layout (rgba8, binding = 5) uniform writeonly image3D uVoxelAlbedo;
 layout (rgba8, binding = 6) uniform writeonly image3D uVoxelNormal;
-layout (rgba8, binding = 7) uniform writeonly image3D uVoxelAlbedo;
+layout (rgba8, binding = 7) uniform writeonly image3D uVoxelRadiance;
 
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
 uniform float uVoxelWorldSize;
@@ -41,10 +42,11 @@ void main()
 	ivec3 voxel_pos = ivec3((gWorldPos - uVoxelGridRangeMin) / vec3(uVoxelWorldSize));
 
 	vec4 color = texture(uDiffuseTexture, gTexcoords);
-	color.rgb *= CalculateShadow() * DirectLight();
-	
 	imageStore(uVoxelAlbedo, voxel_pos, color);
 
-	vec4 normal = vec4(normalize(gNormal) * 0.5f + 0.5f, 0.0f);
+	color.rgb *= CalculateShadow() * DirectLight();
+	imageStore(uVoxelRadiance, voxel_pos, color);
+
+	vec4 normal = vec4(normalize(gNormal) * 0.5f + 0.5f, 1.0f);
 	imageStore(uVoxelNormal, voxel_pos, normal);
 }

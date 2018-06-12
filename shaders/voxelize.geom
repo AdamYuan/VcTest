@@ -17,7 +17,7 @@ uniform float uVoxelWorldSize;
 
 vec3 WorldToScreen(in vec3 v)
 {
-	return ((v - uVoxelGridRangeMin) / uVoxelWorldSize) / 500.0f - 1.0f;
+	return ((v - uVoxelGridRangeMin) / uVoxelWorldSize) / 500.0f - 0.8f;
 }
 
 vec2 WorldToScreen(in vec3 v, in int axis)
@@ -37,7 +37,6 @@ void AddVertex(in vec3 world_mid, in int vert_index, in int axis)
 	gWorldPos = gl_in[vert_index].gl_Position.xyz;
 
 	vec2 screen_pos = WorldToScreen(gWorldPos, axis), screen_mid_pos = WorldToScreen(world_mid, axis);
-
 	screen_pos += normalize(screen_pos - screen_mid_pos) * 0.05f;
 
 	gl_Position = vec4(screen_pos, 1.0f, 1.0f);
