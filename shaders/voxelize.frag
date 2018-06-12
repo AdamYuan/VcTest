@@ -9,7 +9,7 @@ layout (binding = 0) uniform sampler2D uDiffuseTexture;
 layout (binding = 1) uniform sampler2DShadow uShadowMap;
 layout (rgba8, binding = 5) uniform writeonly image3D uVoxelAlbedo;
 layout (rgba8, binding = 6) uniform writeonly image3D uVoxelNormal;
-layout (rgba8, binding = 7) uniform writeonly image3D uVoxelRadiance;
+layout (rgba16, binding = 7) uniform writeonly image3D uVoxelRadiance;
 
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
 uniform float uVoxelWorldSize;
@@ -28,8 +28,8 @@ float CalculateShadow()
 float DirectLight()
 {
 	//return 1.0f;
-	//return max(dot(-uLightDir, normalize(gNormal)), 0.0f);
-	return dot(-uLightDir, normalize(gNormal)) > 0 ? 1.0f : 0.0f;
+	return max(dot(-uLightDir, normalize(gNormal)), 0.0f);
+	//return dot(-uLightDir, normalize(gNormal)) > 0 ? 1.0f : 0.0f;
 }
 
 void main()

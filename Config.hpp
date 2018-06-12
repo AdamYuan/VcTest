@@ -15,7 +15,7 @@ constexpr unsigned kInvocationSize = 2;
 
 constexpr int kShadowWidth = 2048, kShadowHeight = 2048;
 
-constexpr float kVoxelWorldSize = 0.125f;
+constexpr float kVoxelWorldSize = 0.25f;
 extern const glm::vec3 kVoxelGridRangeMin, kVoxelGridRangeMax;
 extern const glm::ivec3 kVoxelDimension;
 

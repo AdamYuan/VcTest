@@ -20,6 +20,8 @@ void Renderer::Initialize()
 	voxelize_.Initialize();
 	voxelize_.Update(shadow_map_.Get());
 	voxelize_.GenerateMipmap();
+	voxelize_.Bounce();
+	voxelize_.GenerateMipmap();
 
 	gbuffer_.Initialize();
 

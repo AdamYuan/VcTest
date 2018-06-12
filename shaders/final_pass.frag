@@ -31,14 +31,16 @@ uniform vec3 uCamPosition;
 const vec2 kShadowTexelSize = vec2(1.0f / 2048.0f);
 const vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f);
 
-const vec3 kConeDirections[4] = 
+const vec3 kConeDirections[6] = 
 {
-    vec3(0.0f, 0.0f, 1.0f),
-    vec3(0.0f, 0.866025f, 0.5f),
-    vec3(0.754996f, -0.4330128f, 0.5f),
-    vec3(-0.754996f, -0.4330128f, 0.5f)
+	vec3(0, 0, 1),
+	vec3(0, 0.866025, 0.5),
+	vec3(0.823639, 0.267617, 0.5),
+	vec3(0.509037, -0.700629, 0.5),
+	vec3(-0.509037, -0.700629, 0.5),
+	vec3(-0.823639, 0.267617, 0.5)
 };
-const float kConeWeights[4] = {0.333333f, 0.222222f, 0.222222f, 0.222222f};
+const float kConeWeights[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};
 const ivec2 kEdgeTests[8] = {{0, 1}, {1, 0}, {1, 1}, {0, -1}, {-1, 0}, {-1, -1}, {1, -1}, {-1, 1}};
 
 mat3 GetTBN(in vec3 normal)
@@ -118,8 +120,8 @@ bool DetectEdge(in float depth, in vec3 normal)
 vec3 IndirectLight(in vec3 start_pos, in mat3 matrix)
 {
 	vec3 color = vec3(0.0f);
-	for(int i = 0; i < 4; i++)
-		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.6f);
+	for(int i = 0; i < 6; i++)
+		color += kConeWeights[i] * ConeTrace(start_pos, normalize(matrix * kConeDirections[i]), 0.57735f);
 	return color * PI;
 }
 

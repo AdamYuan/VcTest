@@ -45,6 +45,9 @@ void Voxelize::Initialize()
 	voxelize_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
 
 	mipmap_shader_.Initialize();
+
+	bounce_shader_.Initialize();
+	bounce_shader_.SetUVoxelDimension(kVoxelDimension);
 }
 
 void Voxelize::Update(const mygl3::Texture2D &shadow_map)
@@ -52,7 +55,7 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 	glDisable(GL_CULL_FACE); glDisable(GL_DEPTH_TEST);
 	glBindImageTexture(5, albedo_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glBindImageTexture(6, normal_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glBindImageTexture(7, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(7, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, 1000, 1000);
@@ -72,7 +75,7 @@ void Voxelize::GenerateMipmap()
 	for(int level = 1; level < max_mipmap_level_; ++level)
 	{
 		for(GLuint f = 0; f < 6; ++f)
-			glBindImageTexture(f, mipmaps_[f].Get(), level - 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+			glBindImageTexture(f, mipmaps_[f].Get(), level - 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
 
 		if(level == 1)
 			radiance_texture_.Bind(0);
@@ -91,6 +94,23 @@ void Voxelize::GenerateMipmap()
 
 	//voxel_texture_.GenerateMipmap();
 	printf("Mipmapping lasted: %lf sec\n", glfwGetTime() - start);
+}
+
+void Voxelize::Bounce()
+{
+	double start = glfwGetTime();
+
+	bounce_shader_.Use();
+
+	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16);
+	albedo_texture_.Bind(0);
+	normal_texture_.Bind(1);
+	for(GLuint f = 0; f < 6; ++f) mipmaps_[f].Bind(f + 2);
+
+	glDispatchCompute(compute_group_sizes_[0].x, compute_group_sizes_[0].y, compute_group_sizes_[0].z);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	printf("Calculate a diffuse bounce lasted: %lf sec\n", glfwGetTime() - start);
 }
 
 void Voxelize::initialize_textures()
@@ -117,9 +137,8 @@ void Voxelize::initialize_textures()
 
 	//radiance
 	radiance_texture_.Initialize();
-	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
 	radiance_texture_.Load(mygl3::ImageInfo(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z,
-											GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, data), false);
+											GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, data), false);
 	glTextureParameterfv(radiance_texture_.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
 	radiance_texture_.SetSizeFilter(GL_LINEAR, GL_LINEAR);
 	radiance_texture_.SetWrapFilter(GL_CLAMP_TO_BORDER);
@@ -131,7 +150,7 @@ void Voxelize::initialize_textures()
 	{
 		t.Initialize();
 		t.Load(mygl3::ImageInfo(mipmap_sizes_[1].x, mipmap_sizes_[1].y, mipmap_sizes_[1].z,
-								GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, nullptr), true);
+								GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, nullptr), true);
 		glTextureParameterfv(t.Get(), GL_TEXTURE_BORDER_COLOR, border_color);
 		t.SetSizeFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 		t.SetWrapFilter(GL_CLAMP_TO_BORDER);

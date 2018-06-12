@@ -11,6 +11,7 @@
 #include <asserts/VoxelizeShader.hpp>
 #include <asserts/VoxelMipmapShader.hpp>
 #include <asserts/VoxelDebugShader.hpp>
+#include <asserts/VoxelBounceShader.hpp>
 
 class Voxelize
 {
@@ -23,12 +24,15 @@ private:
 
 	asserts::VoxelDebugShader debug_shader_;
 	mygl3::VertexObject<true> debug_object_;
+
+	asserts::VoxelBounceShader bounce_shader_;
 	void initialize_textures();
 	void initialize_debug_object();
 public:
 	void Initialize();
 	void Update(const mygl3::Texture2D &shadow_map);
 	void GenerateMipmap();
+	void Bounce();
 	void Debug();
 	const mygl3::Texture3D &GetAlbedo() const { return albedo_texture_; }
 	const mygl3::Texture3D &GetNormal() const { return normal_texture_; }
