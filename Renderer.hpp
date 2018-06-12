@@ -27,7 +27,7 @@ private:
 public:
 	void Initialize();
 
-	void Render(bool indirect_trace, bool show_albedo, bool show_edge);
+	void Render(bool debug_voxel, bool indirect_trace, bool show_albedo, bool show_edge);
 };
 
 

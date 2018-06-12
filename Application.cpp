@@ -33,7 +33,7 @@ void Application::init_window()
 Application::Application()
 {
 	init_window();
-	show_edge_ = false;
+	debug_voxel_ = show_edge_ = false;
 	control_ = indirect_trace_ = show_albedo_ = true;
 	camera_.Position() = kInitialPos;
 	res::Initialize();
@@ -49,7 +49,7 @@ void Application::Run()
 
 		if(control_) cam_control();
 
-		renderer_.Render(indirect_trace_, show_albedo_, show_edge_);
+		renderer_.Render(debug_voxel_, indirect_trace_, show_albedo_, show_edge_);
 
 		glfwSwapBuffers(window_);
 		glfwPollEvents();
@@ -88,10 +88,9 @@ void Application::key_callback(GLFWwindow *window, int key, int, int action, int
 	auto *app = (Application *)glfwGetWindowUserPointer(window);
 	if(action == GLFW_PRESS)
 	{
-		/*if(key == GLFW_KEY_X)
+		if(key == GLFW_KEY_X)
 			app->debug_voxel_ = !app->debug_voxel_;
-		else */
-		if(key == GLFW_KEY_V)
+		else if(key == GLFW_KEY_V)
 			app->indirect_trace_ = !app->indirect_trace_;
 		else if(key == GLFW_KEY_C)
 			app->show_albedo_ = !app->show_albedo_;
