@@ -123,7 +123,7 @@ void Voxels::Bounce()
 
 	bounce_shader_.Use();
 
-	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
+	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16);
 	albedo_texture_.Bind(0);
 	normal_texture_.Bind(1);
 	for(GLuint f = 0; f < 6; ++f) mipmaps_[f].Bind(f + 2);
