@@ -9,7 +9,7 @@
 #include <mygl3/framebuffer.hpp>
 #include <asserts/TraceShader.hpp>
 #include "GBuffer.hpp"
-#include "Voxelize.hpp"
+#include "Voxels.hpp"
 
 class ConeTracer
 {
@@ -19,7 +19,7 @@ private:
 	asserts::TraceShader trace_shader_;
 public:
 	void Initialize();
-	void Update(const GBuffer &gbuffer, const Voxelize &voxels);
+	void Update(const GBuffer &gbuffer, const Voxels &voxels);
 	const mygl3::Texture2D &Get() const { return half_result_; }
 };
 

@@ -1,5 +1,4 @@
 #version 450 core
-
 #define PI 3.14159265f
 
 out vec4 FragColor;
@@ -29,7 +28,7 @@ uniform bool uEnableIndirectTrace, uShowAlbedo, uShowEdge;
 uniform vec3 uCamPosition;
 
 const vec2 kShadowTexelSize = vec2(1.0f / 2048.0f);
-const vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f);
+const vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f) * 0.7f;
 
 const vec3 kConeDirections[6] = 
 {
@@ -58,7 +57,7 @@ mat3 GetTBN(in vec3 normal)
 vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
-	voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
+	//voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);

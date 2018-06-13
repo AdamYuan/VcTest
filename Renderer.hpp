@@ -8,7 +8,7 @@
 #include <mygl3/framebuffer.hpp>
 #include "ShadowMap.hpp"
 #include "Skybox.hpp"
-#include "Voxelize.hpp"
+#include "Voxels.hpp"
 #include "GBuffer.hpp"
 #include "ConeTracer.hpp"
 #include <asserts/FinalShader.hpp>
@@ -16,7 +16,7 @@
 class Renderer
 {
 private:
-	Voxelize voxelize_;
+	Voxels voxels_;
 	ShadowMap shadow_map_;
 	Skybox skybox_;
 	GBuffer gbuffer_;

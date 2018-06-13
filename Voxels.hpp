@@ -2,8 +2,8 @@
 // Created by adamyuan on 5/19/18.
 //
 
-#ifndef VXGITEST_VOXELIZE_HPP
-#define VXGITEST_VOXELIZE_HPP
+#ifndef VXGITEST_VOXELS_HPP
+#define VXGITEST_VOXELS_HPP
 
 #include <vector>
 #include <mygl3/vertexobject.hpp>
@@ -12,8 +12,9 @@
 #include <asserts/VoxelMipmapShader.hpp>
 #include <asserts/VoxelDebugShader.hpp>
 #include <asserts/VoxelBounceShader.hpp>
+#include <asserts/VoxelDirectLightShader.hpp>
 
-class Voxelize
+class Voxels
 {
 private:
 	mygl3::Texture3D radiance_texture_, normal_texture_, albedo_texture_, mipmaps_[6];
@@ -26,12 +27,14 @@ private:
 	mygl3::VertexObject<true> debug_object_;
 
 	asserts::VoxelBounceShader bounce_shader_;
+	asserts::VoxelDirectLightShader direct_light_shader_;
 	void initialize_textures();
 	void initialize_debug_object();
 public:
 	void Initialize();
-	void Update(const mygl3::Texture2D &shadow_map);
+	void Voxelize();
 	void GenerateMipmap();
+	void DirectLight(const mygl3::Texture2D &shadow_map);
 	void Bounce();
 	void Debug();
 	const mygl3::Texture3D &GetAlbedo() const { return albedo_texture_; }
@@ -41,4 +44,4 @@ public:
 };
 
 
-#endif //VXGITEST_VOXELIZE_HPP
+#endif //VXGITEST_VOXELS_HPP

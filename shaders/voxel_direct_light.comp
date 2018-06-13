@@ -1,0 +1,45 @@
+#version 450 core
+layout (local_size_x = 2, local_size_y = 2, local_size_z = 2) in;
+
+layout (binding = 0, rgba16) uniform writeonly image3D uVoxelRadiance;
+
+layout (binding = 0) uniform sampler3D uVoxelAlbedo;
+layout (binding = 1) uniform sampler3D uVoxelNormal;
+layout (binding = 2) uniform sampler2DShadow uShadowMap;
+
+uniform ivec3 uVoxelDimension;
+uniform mat4 uLightMatrix;
+uniform vec3 uLightDir, uVoxelGridRangeMin;
+uniform float uVoxelWorldSize;
+
+float CalculateShadow(in ivec3 voxel_pos)
+{
+	vec3 world_pos = uVoxelGridRangeMin + vec3(voxel_pos) * uVoxelWorldSize;
+	vec4 light_space_pos = uLightMatrix * vec4(world_pos, 1.0f);
+	vec3 proj_coords = light_space_pos.xyz / light_space_pos.w;
+	proj_coords = proj_coords * 0.5f + 0.5f;
+	if(proj_coords.z > 1.0)
+		return 0.0;
+	return texture(uShadowMap, vec3(proj_coords.xy, proj_coords.z - 0.002f));
+}
+
+void main()
+{
+	if(
+			gl_GlobalInvocationID.x >= uVoxelDimension.x || 
+			gl_GlobalInvocationID.y >= uVoxelDimension.y ||
+			gl_GlobalInvocationID.z >= uVoxelDimension.z) 
+		return;
+
+	ivec3 write_pos = ivec3(gl_GlobalInvocationID);
+
+	vec4 albedo = texelFetch(uVoxelAlbedo, write_pos, 0);
+	if(albedo.a < 0.001f)
+		return;
+
+	vec3 normal = texelFetch(uVoxelNormal, write_pos, 0).rgb * 2.0f - 1.0f;
+
+	float direct_light = max(dot(-uLightDir, normal), 0.0f) * CalculateShadow(write_pos);
+
+	imageStore(uVoxelRadiance, write_pos, vec4(albedo.rgb * direct_light, albedo.a));
+}

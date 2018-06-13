@@ -1,5 +1,4 @@
 #version 450 core
-
 #define PI 3.14159265f
 
 out vec3 FragColor;
@@ -44,7 +43,7 @@ mat3 GetTBN(in vec3 normal)
 vec4 SampleVoxel(in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)
 {
 	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);
-	voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
+	//voxel_uv.xy += 1.0f / vec2(uVoxelDimension.xy);
 
 	float mipmap_lod = max(0.0f, lod - 1.0f);
 	vec4 mipmap_color = vec4(0.0f);

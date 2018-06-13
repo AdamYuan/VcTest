@@ -5,11 +5,9 @@ layout (triangle_strip, max_vertices = 3) out;
 
 in vec3 vNormal[];
 in vec2 vTexcoords[];
-in vec4 vLightspaceFragPos[];
 
 out vec2 gTexcoords;
 out vec3 gNormal;
-out vec4 gLightspaceFragPos;
 out vec3 gWorldPos;
 
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
@@ -31,7 +29,6 @@ vec2 WorldToScreen(in vec3 v, in int axis)
 void AddVertex(in vec3 world_mid, in int vert_index, in int axis)
 {
 	gTexcoords = vTexcoords[vert_index];
-	gLightspaceFragPos = vLightspaceFragPos[vert_index];
 	gNormal = normalize(vNormal[vert_index]);
 
 	gWorldPos = gl_in[vert_index].gl_Position.xyz;

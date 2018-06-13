@@ -2,7 +2,7 @@
 #define PI 3.14159265f
 layout (local_size_x = 2, local_size_y = 2, local_size_z = 2) in;
 
-layout (binding = 0, rgba16) uniform image3D uVoxelRadiance;
+layout (binding = 0, rgba16) uniform writeonly image3D uVoxelRadiance;
 
 layout (binding = 0) uniform sampler3D uVoxelAlbedo;
 layout (binding = 1) uniform sampler3D uVoxelNormal;
@@ -97,9 +97,8 @@ void main()
 
 	vec3 normal = texelFetch(uVoxelNormal, write_pos, 0).rgb * 2.0f - 1.0f;
 
-	vec3 radiance = imageLoad(uVoxelRadiance, write_pos).rgb;
 	vec3 indirect_light = IndirectLight(vec3(write_pos), GetTBN(normal));
 	indirect_light *= albedo.rgb;
 
-	imageStore(uVoxelRadiance, write_pos, vec4(radiance + indirect_light, albedo.a));
+	imageStore(uVoxelRadiance, write_pos, vec4(indirect_light, albedo.a));
 }

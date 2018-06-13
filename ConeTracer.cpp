@@ -5,7 +5,7 @@
 #include "ConeTracer.hpp"
 #include "Config.hpp"
 #include "Resources.hpp"
-#include "Voxelize.hpp"
+#include "Voxels.hpp"
 
 void ConeTracer::Initialize()
 {
@@ -27,7 +27,7 @@ void ConeTracer::Initialize()
 	trace_shader_.SetUVoxelGridRangeMax(kVoxelGridRangeMax);
 }
 
-void ConeTracer::Update(const GBuffer &gbuffer, const Voxelize &voxels)
+void ConeTracer::Update(const GBuffer &gbuffer, const Voxels &voxels)
 {
 	mygl3::FrameBufferBinder binder(fbo_);
 

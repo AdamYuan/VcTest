@@ -2,7 +2,7 @@
 // Created by adamyuan on 5/19/18.
 //
 
-#include "Voxelize.hpp"
+#include "Voxels.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
@@ -11,7 +11,7 @@
 
 #include <GLFW/glfw3.h>
 
-void Voxelize::Initialize()
+void Voxels::Initialize()
 {
 	//calculate mipmap sizes
 	max_mipmap_level_ = mygl3::Texture3D::GetLevel3D(kVoxelDimension.x, kVoxelDimension.y, kVoxelDimension.z);
@@ -37,9 +37,6 @@ void Voxelize::Initialize()
 	debug_shader_.SetUProjection(res::cam_projection);
 
 	voxelize_shader_.Initialize();
-	voxelize_shader_.SetULightDir(kLightDir);
-	voxelize_shader_.SetULightMatrix(res::light_matrix);
-
 	voxelize_shader_.SetUVoxelGridRangeMin(kVoxelGridRangeMin);
 	voxelize_shader_.SetUVoxelGridRangeMax(kVoxelGridRangeMax);
 	voxelize_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
@@ -48,9 +45,16 @@ void Voxelize::Initialize()
 
 	bounce_shader_.Initialize();
 	bounce_shader_.SetUVoxelDimension(kVoxelDimension);
+
+	direct_light_shader_.Initialize();
+	direct_light_shader_.SetUVoxelDimension(kVoxelDimension);
+	direct_light_shader_.SetUVoxelGridRangeMin(kVoxelGridRangeMin);
+	direct_light_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
+	direct_light_shader_.SetULightDir(kLightDir);
+	direct_light_shader_.SetULightMatrix(res::light_matrix);
 }
 
-void Voxelize::Update(const mygl3::Texture2D &shadow_map)
+void Voxels::Voxelize()
 {
 	glDisable(GL_CULL_FACE); glDisable(GL_DEPTH_TEST);
 	glBindImageTexture(5, albedo_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
@@ -59,15 +63,16 @@ void Voxelize::Update(const mygl3::Texture2D &shadow_map)
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, 1000, 1000);
+
 	double start = glfwGetTime();
 	voxelize_shader_.Use();
-	shadow_map.Bind(1);
+
 	res::sponza_model.Render();
-	printf("Voxelize lasted: %lf sec\n", glfwGetTime() - start);
+	printf("Voxelize lasted: %lf ms\n", (glfwGetTime() - start) * 1000.0f);
 	glEnable(GL_CULL_FACE); glEnable(GL_DEPTH_TEST);
 }
 
-void Voxelize::GenerateMipmap()
+void Voxels::GenerateMipmap()
 {
 	double start = glfwGetTime();
 
@@ -92,17 +97,33 @@ void Voxelize::GenerateMipmap()
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	//voxel_texture_.GenerateMipmap();
-	printf("Mipmapping lasted: %lf sec\n", glfwGetTime() - start);
+	printf("Mipmapping lasted: %lf ms\n", (glfwGetTime() - start) * 1000.0f);
 }
 
-void Voxelize::Bounce()
+void Voxels::DirectLight(const mygl3::Texture2D &shadow_map)
+{
+	double start = glfwGetTime();
+
+	direct_light_shader_.Use();
+
+	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
+	albedo_texture_.Bind(0);
+	normal_texture_.Bind(1);
+	shadow_map.Bind(2);
+
+	glDispatchCompute(compute_group_sizes_[0].x, compute_group_sizes_[0].y, compute_group_sizes_[0].z);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	printf("Direct light lasted: %lf ms\n", (glfwGetTime() - start) * 1000.0f);
+}
+
+void Voxels::Bounce()
 {
 	double start = glfwGetTime();
 
 	bounce_shader_.Use();
 
-	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16);
+	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
 	albedo_texture_.Bind(0);
 	normal_texture_.Bind(1);
 	for(GLuint f = 0; f < 6; ++f) mipmaps_[f].Bind(f + 2);
@@ -110,10 +131,10 @@ void Voxelize::Bounce()
 	glDispatchCompute(compute_group_sizes_[0].x, compute_group_sizes_[0].y, compute_group_sizes_[0].z);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	printf("Calculate a diffuse bounce lasted: %lf sec\n", glfwGetTime() - start);
+	printf("Calculate a diffuse bounce lasted: %lf ms\n", (glfwGetTime() - start) * 1000.0f);
 }
 
-void Voxelize::initialize_textures()
+void Voxels::initialize_textures()
 {
 	auto *data = new GLubyte[kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4];
 	std::fill(data, data + kVoxelDimension.x * kVoxelDimension.y * kVoxelDimension.z * 4, 0);
@@ -157,7 +178,7 @@ void Voxelize::initialize_textures()
 	}
 }
 
-void Voxelize::initialize_debug_object()
+void Voxels::initialize_debug_object()
 {
 	std::vector<glm::vec3> vertices;
 	std::vector<unsigned> indices;
@@ -266,7 +287,7 @@ void Voxelize::initialize_debug_object()
 	debug_object_.SetAttributes(0, 3, 1, 3, 2, 3);
 }
 
-void Voxelize::Debug()
+void Voxels::Debug()
 {
 	glDisable(GL_CULL_FACE);
 	radiance_texture_.SetSizeFilter(GL_NEAREST, GL_NEAREST);

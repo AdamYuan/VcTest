@@ -17,11 +17,14 @@ void Renderer::Initialize()
 
 	skybox_.Initialize();
 
-	voxelize_.Initialize();
-	voxelize_.Update(shadow_map_.Get());
-	voxelize_.GenerateMipmap();
-	voxelize_.Bounce();
-	voxelize_.GenerateMipmap();
+	voxels_.Initialize();
+
+	voxels_.Voxelize();
+	voxels_.DirectLight(shadow_map_.Get());
+	voxels_.GenerateMipmap();
+
+	voxels_.Bounce();
+	voxels_.GenerateMipmap();
 
 	gbuffer_.Initialize();
 
@@ -49,14 +52,14 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, b
 		glViewport(0, 0, kWidth, kHeight);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		voxelize_.Debug();
+		voxels_.Debug();
 		return;
 	}
 
 	gbuffer_.Update();
 
 	if(indirect_trace)
-		cone_tracer_.Update(gbuffer_, voxelize_);
+		cone_tracer_.Update(gbuffer_, voxels_);
 
 	glViewport(0, 0, kWidth, kHeight);
 	glDisable(GL_DEPTH_TEST);
@@ -69,8 +72,8 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, b
 	cone_tracer_.Get().Bind(3);
 	skybox_.Get().Bind(4);
 	shadow_map_.Get().Bind(5);
-	voxelize_.GetRadiance().Bind(6);
-	for(int i = 0; i < 6; ++i) voxelize_.GetMipmap()[i].Bind(i + 9u);
+	voxels_.GetRadiance().Bind(6);
+	for(int i = 0; i < 6; ++i) voxels_.GetMipmap()[i].Bind(i + 9u);
 
 	final_shader_.Use();
 
