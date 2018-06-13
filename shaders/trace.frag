@@ -1,7 +1,7 @@
 #version 450 core
 #define PI 3.14159265f
 
-out vec3 FragColor;
+out vec4 FragColor;
 
 in vec2 vTexcoords;
 in vec3 vViewDir;
@@ -66,7 +66,7 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 {
 	vec4 color = vec4(0.0f);
 
-	float dist = 0.5f;
+	float dist = 0.3f;
 
 	ivec3 load_indices = ivec3(
 			direction.x < 0.0f ? 0 : 1, 
@@ -106,10 +106,10 @@ void main()
 	if(length(normal) > 0.5f)
 	{
 		vec3 position = texture(uHalfGPosition, vTexcoords).rgb;
-		color = IndirectLight(position + normal * 0.2f, GetTBN(normal));
+		color = IndirectLight(position + normal * 0.3f, GetTBN(normal));
 	}
 	else
 		color = vec3(0.0f);
 
-	FragColor = color;
+	FragColor = vec4(color, 1.0f);
 }

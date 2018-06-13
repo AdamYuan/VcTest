@@ -77,7 +77,7 @@ vec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)
 {
 	vec4 color = vec4(0.0f);
 
-	float dist = 0.5f;
+	float dist = 0.3f;
 
 	ivec3 load_indices = ivec3(
 			direction.x < 0.0f ? 0 : 1, 
@@ -133,7 +133,7 @@ float CalculateShadow(in vec3 position)
 	float sum = 0.0f;
 	for(int i = -2; i <= 2; ++i)
 		for(int j = -2; j <= 2; ++j)
-			sum += texture(uShadowMap, vec3(proj_coords.xy + vec2(float(i), float(j)) * kShadowTexelSize, proj_coords.z - 0.001f));
+			sum += texture(uShadowMap, vec3(proj_coords.xy + vec2(float(i), float(j)) * kShadowTexelSize, proj_coords.z - 0.002f));
 
 	return sum / 25.0f;
 }
@@ -168,7 +168,7 @@ void main()
 		else if(uEnableIndirectTrace)
 		{
 			if(edge)
-				final_color += IndirectLight(position + normal * 0.2f, GetTBN(normal));
+				final_color += IndirectLight(position + normal * 0.3f, GetTBN(normal));
 			else
 				final_color += texture(uHalfTraceResult, vTexcoords).rgb;
 		}

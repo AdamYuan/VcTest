@@ -37,6 +37,9 @@ Application::Application()
 	control_ = indirect_trace_ = show_albedo_ = true;
 	camera_.Position() = kInitialPos;
 	res::Initialize();
+	sun_pos_ = glm::vec3(-24.6f, 50.0f, -12.0f);
+	res::UpdateLight(sun_pos_);
+
 	renderer_.Initialize();
 }
 
@@ -61,24 +64,54 @@ void Application::Run()
 
 void Application::cam_control()
 {
+	float speed = framerate_.GetDelta() * kSpeed;
 	if(glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-		camera_.MoveForward(framerate_.GetDelta() * kSpeed, 0.0f);
+		camera_.MoveForward(speed, 0.0f);
 	if(glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-		camera_.MoveForward(framerate_.GetDelta() * kSpeed, 90.0f);
+		camera_.MoveForward(speed, 90.0f);
 	if(glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-		camera_.MoveForward(framerate_.GetDelta() * kSpeed, -90.0f);
+		camera_.MoveForward(speed, -90.0f);
 	if(glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-		camera_.MoveForward(framerate_.GetDelta() * kSpeed, 180.0f);
+		camera_.MoveForward(speed, 180.0f);
 	if(glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS)
-		camera_.MoveUp(framerate_.GetDelta() * kSpeed);
+		camera_.MoveUp(speed);
 	if(glfwGetKey(window_, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		camera_.MoveUp(-framerate_.GetDelta() * kSpeed);
+		camera_.MoveUp(-speed);
+
+	bool light_changed = false;
+	if(glfwGetKey(window_, GLFW_KEY_LEFT) == GLFW_PRESS)
+	{
+		sun_pos_.x -= speed;
+		light_changed = true;
+	}
+	if(glfwGetKey(window_, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	{
+		sun_pos_.x += speed;
+		light_changed = true;
+	}
+	if(glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		sun_pos_.z -= speed;
+		light_changed = true;
+	}
+	if(glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		sun_pos_.z += speed;
+		light_changed = true;
+	}
+
+	if(light_changed)
+	{
+		res::UpdateLight(sun_pos_);
+		renderer_.UpdateLight();
+	}
 
 	double mouse_x, mouse_y;
 	glfwGetCursorPos(window_, &mouse_x, &mouse_y);
 	camera_.MouseControl((float)(mouse_x - kMouseX), (float)(mouse_y - kMouseY), .3f);
 	glfwSetCursorPos(window_, kMouseX, kMouseY);
 
+	res::UpdateCam(camera_);
 	res::cam_view = camera_.GetMatrix();
 	res::cam_pos = camera_.GetPosition();
 }

@@ -10,7 +10,7 @@
 void ConeTracer::Initialize()
 {
 	half_result_.Initialize();
-	half_result_.Load(mygl3::ImageInfo(kHalfWidth, kHalfHeight, 0, GL_RGB16, 0, 0, nullptr), false);
+	half_result_.Load(mygl3::ImageInfo(kHalfWidth, kHalfHeight, 0, GL_RGBA32F, 0, 0, nullptr), false);
 	half_result_.SetWrapFilter(GL_CLAMP_TO_EDGE);
 	half_result_.SetSizeFilter(GL_NEAREST, GL_NEAREST);
 

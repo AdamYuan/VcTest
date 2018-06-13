@@ -8,7 +8,7 @@ layout (binding = 0) uniform sampler2D uDiffuseTexture;
 layout (binding = 1) uniform sampler2DShadow uShadowMap;
 layout (rgba8, binding = 5) uniform writeonly image3D uVoxelAlbedo;
 layout (rgba8, binding = 6) uniform writeonly image3D uVoxelNormal;
-layout (rgba16, binding = 7) uniform writeonly image3D uVoxelRadiance;
+//layout (rgba16, binding = 7) uniform writeonly image3D uVoxelRadiance;
 
 uniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;
 uniform float uVoxelWorldSize;
@@ -24,7 +24,7 @@ void main()
 
 	vec4 color = texture(uDiffuseTexture, gTexcoords);
 	imageStore(uVoxelAlbedo, voxel_pos, color);
-	imageStore(uVoxelRadiance, voxel_pos, vec4(0.0f, 0.0f, 0.0f, color.a));
+	//imageStore(uVoxelRadiance, voxel_pos, vec4(0.0f, 0.0f, 0.0f, color.a));
 
 	vec4 normal = vec4(normalize(gNormal) * 0.5f + 0.5f, 1.0f);
 	imageStore(uVoxelNormal, voxel_pos, normal);

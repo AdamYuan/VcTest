@@ -15,6 +15,7 @@ make
 * V: Toggle voxel cone tracing
 * E: Toggle showing edge 
 * X: Debug voxel
+* Arrow key: Change light direction
 ## Screenshots
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/1.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/2.png)

@@ -1,5 +1,5 @@
 #version 450 core
-layout (local_size_x = 2, local_size_y = 2, local_size_z = 2) in;
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
 layout (binding = 0, rgba16) uniform writeonly image3D uVoxelRadiance;
 
@@ -20,7 +20,7 @@ float CalculateShadow(in ivec3 voxel_pos)
 	proj_coords = proj_coords * 0.5f + 0.5f;
 	if(proj_coords.z > 1.0)
 		return 0.0;
-	return texture(uShadowMap, vec3(proj_coords.xy, proj_coords.z - 0.002f));
+	return texture(uShadowMap, vec3(proj_coords.xy, proj_coords.z - 0.003f));
 }
 
 void main()

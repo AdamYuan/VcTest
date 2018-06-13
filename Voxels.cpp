@@ -50,8 +50,6 @@ void Voxels::Initialize()
 	direct_light_shader_.SetUVoxelDimension(kVoxelDimension);
 	direct_light_shader_.SetUVoxelGridRangeMin(kVoxelGridRangeMin);
 	direct_light_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
-	direct_light_shader_.SetULightDir(kLightDir);
-	direct_light_shader_.SetULightMatrix(res::light_matrix);
 }
 
 void Voxels::Voxelize()
@@ -59,7 +57,7 @@ void Voxels::Voxelize()
 	glDisable(GL_CULL_FACE); glDisable(GL_DEPTH_TEST);
 	glBindImageTexture(5, albedo_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glBindImageTexture(6, normal_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glBindImageTexture(7, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
+	//glBindImageTexture(7, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, 1000, 1000);
@@ -105,6 +103,8 @@ void Voxels::DirectLight(const mygl3::Texture2D &shadow_map)
 	double start = glfwGetTime();
 
 	direct_light_shader_.Use();
+	direct_light_shader_.SetULightDir(res::light_dir);
+	direct_light_shader_.SetULightMatrix(res::light_matrix);
 
 	glBindImageTexture(0, radiance_texture_.Get(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16);
 	albedo_texture_.Bind(0);
@@ -196,7 +196,7 @@ void Voxels::initialize_debug_object()
 	ft1.z = ft3.z = bt1.z = bt3.z = 0.0f;
 	ft2.z = ft4.z = bt2.z = bt4.z = 1.0f;
 
-	for(int i = 0; i < kVoxelDimension.x; ++i)
+	for(int i = 0; i <= kVoxelDimension.x; ++i)
 	{
 		v1.x = v2.x = v3.x = v4.x = kVoxelGridRangeMin.x + kVoxelWorldSize * (float)i;
 		ft1.x = ft2.x = ft3.x = ft4.x = (i + 0.5f) / (float)kVoxelDimension.x;
@@ -228,7 +228,7 @@ void Voxels::initialize_debug_object()
 	ft1.z = ft3.z = bt1.z = bt3.z = 0.0f;
 	ft2.z = ft4.z = bt2.z = bt4.z = 1.0f;
 
-	for(int i = 0; i < kVoxelDimension.y; ++i)
+	for(int i = 0; i <= kVoxelDimension.y; ++i)
 	{
 		v1.y = v2.y = v3.y = v4.y = kVoxelGridRangeMin.y + kVoxelWorldSize * (float)i;
 		ft1.y = ft2.y = ft3.y = ft4.y = (i - 0.5f) / (float)kVoxelDimension.y;
@@ -260,7 +260,7 @@ void Voxels::initialize_debug_object()
 	ft1.y = ft3.y = bt1.y = bt3.y = 0.0f;
 	ft2.y = ft4.y = bt2.y = bt4.y = 1.0f;
 
-	for(int i = 0; i < kVoxelDimension.z; ++i)
+	for(int i = 0; i <= kVoxelDimension.z; ++i)
 	{
 		v1.z = v2.z = v3.z = v4.z = kVoxelGridRangeMin.z + kVoxelWorldSize * (float)i;
 		ft1.z = ft2.z = ft3.z = ft4.z = (i + 0.5f) / (float)kVoxelDimension.z;

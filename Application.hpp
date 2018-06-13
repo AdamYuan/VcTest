@@ -18,6 +18,7 @@ private:
 	mygl3::Framerate framerate_;
 	Renderer renderer_;
 	bool debug_voxel_, indirect_trace_, show_albedo_, show_edge_, control_;
+	glm::vec3 sun_pos_;
 	void init_window();
 	void cam_control();
 	static void key_callback(GLFWwindow *window, int key, int, int action, int);

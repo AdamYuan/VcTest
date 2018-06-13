@@ -34,8 +34,6 @@ void Renderer::Initialize()
 	final_shader_.Initialize();
 
 	final_shader_.SetUProjection(res::cam_projection);
-	final_shader_.SetULightMatrix(res::light_matrix);
-	final_shader_.SetULightDir(kLightDir);
 
 	final_shader_.SetUVoxelDimension(kVoxelDimension);
 	final_shader_.SetUVoxelWorldSize(kVoxelWorldSize);
@@ -76,6 +74,8 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, b
 	for(int i = 0; i < 6; ++i) voxels_.GetMipmap()[i].Bind(i + 9u);
 
 	final_shader_.Use();
+	final_shader_.SetULightDir(res::light_dir);
+	final_shader_.SetULightMatrix(res::light_matrix);
 
 	final_shader_.SetUView(res::cam_view);
 	final_shader_.SetUCamPosition(res::cam_pos);
@@ -86,5 +86,15 @@ void Renderer::Render(bool debug_voxel, bool indirect_trace, bool show_albedo, b
 	res::quad_object.Render(GL_TRIANGLES);
 
 	glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::UpdateLight()
+{
+	shadow_map_.Update();
+
+	voxels_.DirectLight(shadow_map_.Get());
+	voxels_.GenerateMipmap();
+	voxels_.Bounce();
+	voxels_.GenerateMipmap();
 }
 
