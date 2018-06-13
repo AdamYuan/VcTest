@@ -19,6 +19,7 @@ make
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/1.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/2.png)
 ![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/3.png)
+![alt text](https://raw.githubusercontent.com/AdamYuan/VcTest/master/screenshots/4.png)
 ## References
 * https://jose-villegas.github.io/post/deferred_voxel_shading/
 * http://simonstechblog.blogspot.com/2013/01/implementing-voxel-cone-tracing.html
