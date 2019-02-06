@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class VoxelDirectLightShader {
@@ -26,25 +27,10 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/voxel_direct_light.comp");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxel_direct_light.comp\n");
-		}
-		const char *GL_COMPUTE_SHADER_src = str.c_str();
+		const char *GL_COMPUTE_SHADER_src = "#version 450 core\nlayout (local_size_x = 3, local_size_y = 3, local_size_z = 3) in;\n\nlayout (binding = 0, rgba16) uniform writeonly image3D uVoxelRadiance;\n\nlayout (binding = 0) uniform sampler3D uVoxelAlbedo;\nlayout (binding = 1) uniform sampler3D uVoxelNormal;\nlayout (binding = 2) uniform sampler2D uShadowMap;\n\nuniform ivec3 uVoxelDimension;\nuniform mat4 uLightMatrix;\nuniform vec3 uLightDir, uVoxelGridRangeMin;\nuniform float uVoxelWorldSize;\n\nconst float kEsmC = 60.0f;\n\nfloat SM_GetVisibility(in sampler2D shadow_map, in vec4 lightspace_pos)\n{\n	vec3 proj_coords = lightspace_pos.xyz / lightspace_pos.w;\n	proj_coords = proj_coords * 0.5f + 0.5f;\n\n	float current_depth = proj_coords.z;\n	float occluder = texture(shadow_map, proj_coords.xy).r;\n	return clamp(exp((occluder - kEsmC * current_depth)), 0.0f, 1.0f);\n}\n\nfloat SM_GetVisibility(in sampler2D shadow_map, in vec3 position, in mat4 light_matrix)\n{\n	vec4 lightspace_frag_pos = light_matrix * vec4(position, 1.0f);\n	return SM_GetVisibility(shadow_map, lightspace_frag_pos);\n}\n\nvoid main()\n{\n	if(\n			gl_GlobalInvocationID.x >= uVoxelDimension.x || \n			gl_GlobalInvocationID.y >= uVoxelDimension.y ||\n			gl_GlobalInvocationID.z >= uVoxelDimension.z) \n		return;\n\n	ivec3 write_pos = ivec3(gl_GlobalInvocationID);\n\n	vec4 albedo = texelFetch(uVoxelAlbedo, write_pos, 0);\n	if(albedo.a < 0.001f)\n		return;\n\n	vec3 normal = texelFetch(uVoxelNormal, write_pos, 0).rgb * 2.0f - 1.0f;\n	vec3 w = normal * normal;\n	vec3 d = -uLightDir;\n	if(normal.x > 0) d.x = max(d.x, 0.0f); else d.x = max(-d.x, 0.0f);\n	if(normal.y > 0) d.y = max(d.y, 0.0f); else d.y = max(-d.y, 0.0f);\n	if(normal.z > 0) d.z = max(d.z, 0.0f); else d.z = max(-d.z, 0.0f);\n\n	float v = dot(w, d);\n\n	vec3 world_pos = uVoxelGridRangeMin + (vec3(write_pos) + normal) * uVoxelWorldSize;\n	float direct_light = v * SM_GetVisibility(uShadowMap, world_pos + vec3(uVoxelWorldSize / 2.0f), uLightMatrix);\n\n	imageStore(uVoxelRadiance, write_pos, vec4(albedo.rgb * direct_light, 1.0f));\n}\n";
 		shader = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(shader, 1, &GL_COMPUTE_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxel_direct_light.comp:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

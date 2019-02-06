@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class VoxelDebugShader {
@@ -23,45 +24,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/voxel_debug.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxel_debug.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n\nout vec4 FragColor;\n\nin vec3 vTexcoordsFront, vTexcoordsBack;\n\nlayout (binding = 0) uniform sampler3D uVoxelAlbedo;\n\nvoid main()\n{\n	FragColor = texture(uVoxelAlbedo, gl_FrontFacing ? vTexcoordsFront : vTexcoordsBack);\n	if(FragColor.a < 0.1f)\n		discard;\n	vec3 mapped = vec3(1.0f) - exp(-FragColor.rgb * 1.5f);\n	mapped = pow(mapped, vec3(1.0f / 2.2f));\n	FragColor = vec4(mapped, 1.0f);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxel_debug.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/voxel_debug.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxel_debug.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\nlayout (location = 0) in vec3 aPosition;\nlayout (location = 1) in vec3 aTexcoordsFront;\nlayout (location = 2) in vec3 aTexcoordsBack;\n\nout vec3 vTexcoordsFront, vTexcoordsBack;\n\nuniform mat4 uProjection, uView;\n\nvoid main()\n{\n	vTexcoordsFront = aTexcoordsFront;\n	vTexcoordsBack = aTexcoordsBack;\n	gl_Position = uProjection * uView * vec4(aPosition, 1.0f);\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxel_debug.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

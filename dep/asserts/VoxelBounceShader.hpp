@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class VoxelBounceShader {
@@ -22,25 +23,10 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/voxel_bounce.comp");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxel_bounce.comp\n");
-		}
-		const char *GL_COMPUTE_SHADER_src = str.c_str();
+		const char *GL_COMPUTE_SHADER_src = "#version 450 core\n#define PI 3.14159265f\nlayout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;\n\nlayout (binding = 0, rgba16) uniform image3D uVoxelRadiance;\n\nlayout (binding = 0) uniform sampler3D uVoxelAlbedo;\nlayout (binding = 1) uniform sampler3D uVoxelNormal;\nlayout (binding = 2) uniform sampler3D uVoxelRadianceMipmaps[6];\n\nuniform ivec3 uVoxelDimension;\n\n//cheap 4 cone indirect trace\nconst vec3 kConeDirections[4] = \n{\n    vec3(0.0f, 0.0f, 1.0f),\n    vec3(0.0f, 0.866025f, 0.5f),\n    vec3(0.754996f, -0.4330128f, 0.5f),\n    vec3(-0.754996f, -0.4330128f, 0.5f)\n};\nconst float kConeWeights[4] = {0.333333f, 0.222222f, 0.222222f, 0.222222f};\n\n/*const vec3 kConeDirections[6] = \n{\n	vec3(0, 0, 1),\n	vec3(0, 0.866025, 0.5),\n	vec3(0.823639, 0.267617, 0.5),\n	vec3(0.509037, -0.700629, 0.5),\n	vec3(-0.509037, -0.700629, 0.5),\n	vec3(-0.823639, 0.267617, 0.5)\n};\nconst float kConeWeights[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};*/\n\nmat3 Util_GetTBN(in vec3 normal)\n{\n	vec3 tangent;\n	vec3 v1 = cross(normal, vec3(0.0f, 0.0f, 1.0f)), v2 = cross(normal, vec3(0.0f, 1.0f, 0.0f));\n	if(dot(v1, v1) > dot(v2, v2))\n		tangent = v1;\n	else\n		tangent = v2;\n\n	return mat3(tangent, cross(tangent, normal), normal);\n}\n\nvec4 SampleVoxel(in vec3 uv, in float lod, in ivec3 indices, in vec3 weights)\n{\n	float mipmap_lod = max(0.0f, lod - 1.0f);\n	vec4 mipmap_color = vec4(0.0f);\n	if(weights.x > 0.0f)\n		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.x], uv, mipmap_lod) * weights.x;\n	if(weights.y > 0.0f)\n		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.y], uv, mipmap_lod) * weights.y;\n	if(weights.z > 0.0f)\n		mipmap_color += textureLod(uVoxelRadianceMipmaps[indices.z], uv, mipmap_lod) * weights.z;\n	return mipmap_color;\n}\n\nvec3 ConeTrace(in vec3 start_pos, in vec3 direction, in float tan_half_angle)\n{\n	vec4 color = vec4(0.0f);\n\n	float dist = 1.0f;//skip a voxel\n\n	ivec3 load_indices = ivec3(\n			direction.x < 0.0f ? 0 : 1, \n			direction.y < 0.0f ? 2 : 3, \n			direction.z < 0.0f ? 4 : 5);\n	vec3 weights = direction * direction;\n\n	while(dist < 512.0f && color.a < 1.0f)\n	{\n		vec3 pos = start_pos + dist * direction;\n\n		float diameter = max(1.0f, 2.0f * tan_half_angle * dist);\n		float lod = log2(diameter);\n		vec4 voxel_color = SampleVoxel(pos / vec3(uVoxelDimension), lod, load_indices, weights);\n		color += voxel_color * (1.0f - color.a);\n\n		dist += diameter * 0.5f;\n	}\n\n	return color.rgb;\n}\n\nvec3 IndirectLight(in vec3 start_pos, in mat3 matrix)\n{\n	vec3 color = vec3(0.0f);\n\n	for(int i = 0; i < 4; i++)\n		color += kConeWeights[i] * ConeTrace(start_pos, matrix * normalize(kConeDirections[i]), 1.0f);\n\n	return color * PI;\n}\n\nvoid main()\n{\n	if(\n			gl_GlobalInvocationID.x >= uVoxelDimension.x || \n			gl_GlobalInvocationID.y >= uVoxelDimension.y ||\n			gl_GlobalInvocationID.z >= uVoxelDimension.z) \n		return;\n\n	ivec3 write_pos = ivec3(gl_GlobalInvocationID);\n	vec4 albedo = texelFetch(uVoxelAlbedo, write_pos, 0);\n	if(albedo.a < 0.001f)\n		return;\n\n	vec3 normal = texelFetch(uVoxelNormal, write_pos, 0).rgb * 2.0f - 1.0f;\n\n	vec3 indirect_light = IndirectLight(vec3(write_pos), Util_GetTBN(normal));\n	indirect_light *= albedo.rgb;\n\n	vec3 radiance = imageLoad(uVoxelRadiance, write_pos).xyz;\n\n	imageStore(uVoxelRadiance, write_pos, vec4(indirect_light + radiance, albedo.a));\n}\n";
 		shader = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(shader, 1, &GL_COMPUTE_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxel_bounce.comp:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class SkyboxShader {
@@ -23,45 +24,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/skybox.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/skybox.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\nout vec4 FragColor;\nin vec3 vTexcoords;\nlayout (binding = 0) uniform samplerCube uSkyboxTexture;\nvoid main()\n{\n	FragColor = texture(uSkyboxTexture, vTexcoords);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/skybox.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/skybox.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/skybox.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\nlayout (location = 0) in vec3 aPos;\nuniform mat4 uProjection, uView;\nout vec3 vTexcoords;\nvoid main()\n{\n	vTexcoords = aPos;\n	vec4 pos = uProjection * uView * vec4(aPos, 1.0);\n	gl_Position = pos.xyww;\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/skybox.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

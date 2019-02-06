@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class TraceShader {
@@ -28,45 +29,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/trace.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/trace.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n\nout vec4 FragColor;\n\nin vec2 vTexcoords;\nin vec3 vViewDir;\n\nlayout (binding = 0) uniform sampler2D uHalfGPosition;\nlayout (binding = 1) uniform sampler2D uHalfGNormal;\nlayout (binding = 6) uniform sampler3D uVoxelRadiance;\nlayout (binding = 7) uniform sampler3D uVoxelRadianceMipmaps[6];\n\nuniform ivec3 uVoxelDimension;\nuniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;\nuniform float uVoxelWorldSize;\n\nuniform vec3 uCamPosition;\n\nmat3 Util_GetTBN(in vec3 normal)\n{\n	vec3 tangent;\n	vec3 v1 = cross(normal, vec3(0.0f, 0.0f, 1.0f)), v2 = cross(normal, vec3(0.0f, 1.0f, 0.0f));\n	if(dot(v1, v1) > dot(v2, v2))\n		tangent = v1;\n	else\n		tangent = v2;\n\n	return mat3(tangent, cross(tangent, normal), normal);\n}\nconst vec3 kConeDirections6[6] = \n{\n	vec3(0.0f, 0.0f, 1.0f),\n	vec3(0.0f, 0.866025f, 0.5f),\n	vec3(0.823639f, 0.267617f, 0.5f),\n	vec3(0.509037f, -0.7006629f, 0.5f),\n	vec3(-0.50937f, -0.7006629f, 0.5f),\n	vec3(-0.823639f, 0.267617f, 0.5f)\n};\nconst float kConeWeights6[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};\n\n/*const vec3 kConeDirections5[5] = \n  {                      \n  vec3(0, 0, 1),\n  vec3(0, 0.707, 0.707),\n  vec3(0, -0.707, 0.707),\n  vec3(0.707, 0, 0.707),\n  vec3(-0.707, 0, 0.707)\n  };\n  const float kConeWeights5[5] = {0.28, 0.18, 0.18, 0.18, 0.18};*/\nvec4 VCT_SampleVoxel(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)\n{\n	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);\n\n	float mipmap_lod = max(0.0f, lod - 1.0f);\n	vec4 mipmap_color = vec4(0.0f);\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;\n	if(lod < 1.0f)\n		return mix(texture(voxel_radiance, voxel_uv), mipmap_color, max(lod, 0.0f));\n	else\n		return mipmap_color;\n}\n\nvec3 VCT_ConeTrace(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 start_pos, in vec3 direction, in float tan_half_angle, in float initial_dist, in float max_dist)\n{\n	vec4 color = vec4(0.0f);\n\n	float dist = initial_dist;\n\n	ivec3 load_indices = ivec3(\n			direction.x <= 0.0f ? 0 : 1, \n			direction.y <= 0.0f ? 2 : 3, \n			direction.z <= 0.0f ? 4 : 5);\n	vec3 weights = direction * direction;\n\n	while(dist < max_dist && color.a < 1.0f)\n	{\n		vec3 pos = start_pos + dist * direction;\n\n		float diameter = 2.0f * tan_half_angle * dist;\n		float lod = log2(diameter / uVoxelWorldSize);\n		vec4 voxel_color = VCT_SampleVoxel(voxel_radiance, voxel_radiance_mipmaps, pos, lod, load_indices, weights);\n		color += voxel_color * (1.0f - color.a);\n\n		dist += diameter * 0.5f;\n	}\n\n	return color.rgb;\n}\n\nvec3 VCT_IndirectLight(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 start_pos, in mat3 matrix, in float initial_dist, in float max_dist)\n{\n	vec3 color = vec3(0.0f);\n\n	for(int i = 0; i < 6; i++)\n		color += kConeWeights6[i] * VCT_ConeTrace(voxel_radiance, voxel_radiance_mipmaps, start_pos, matrix * normalize(kConeDirections6[i]), 0.57735f, initial_dist, max_dist);\n\n	return color * 3.1415926;\n}\n\nvoid main()\n{\n	vec3 color, normal = texture(uHalfGNormal, vTexcoords).rgb * 2.0f - 1.0f;\n\n	if(length(normal) > 0.5f)\n	{\n		vec3 position = texture(uHalfGPosition, vTexcoords).rgb;\n		color = VCT_IndirectLight(uVoxelRadiance, uVoxelRadianceMipmaps, position + normal * 0.3f, Util_GetTBN(normal), 0.3f, 32.0f);\n	}\n	else\n		color = vec3(0.0f);\n\n	FragColor = vec4(color, 1.0f);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/trace.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/quad_dir.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/quad_dir.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\n\nlayout (location = 0) in vec2 aPosition;\nlayout (location = 1) in vec2 aTexcoords;\n\nout vec2 vTexcoords;\nout vec3 vViewDir;\n\nuniform mat4 uView, uProjection;\n\nvoid main()\n{\n	gl_Position = vec4(aPosition, 1.0, 1.0);\n\n	vTexcoords = aTexcoords;\n	vViewDir = mat3(inverse(uView)) * (inverse(uProjection) * gl_Position).xyz;\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/quad_dir.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

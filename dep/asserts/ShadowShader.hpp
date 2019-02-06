@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class ShadowShader {
@@ -22,45 +23,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/shadow.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/shadow.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n\nout float FragColor;\nin vec4 vPosition;\n\nconst float kEsmC = 60.0f;\n\nvoid main()\n{\n	float depth = vPosition.z / vPosition.w;\n	depth = depth * 0.5f + 0.5f;\n	\n	FragColor = depth * kEsmC;\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/shadow.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/shadow.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/shadow.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\nlayout (location = 0) in vec3 aPos;\nlayout (location = 1) in vec3 aNormal;\nlayout (location = 2) in vec2 aTexcoords;\n\nout vec4 vPosition;\nuniform mat4 uLightMatrix;\n\nvoid main()\n{\n	gl_Position = uLightMatrix * vec4(aPos, 1.0f);\n	vPosition = gl_Position;\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/shadow.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

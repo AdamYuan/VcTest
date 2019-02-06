@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class VoxelMipmapShader {
@@ -18,38 +19,27 @@ public:
 	VoxelMipmapShader& operator= (const VoxelMipmapShader &) = delete;
 private:
 	GLint unif_uVoxelDimensionMipmap;
+	GLint unif_uVoxelDimensionSource;
 	GLint unif_uSourceLod;
 public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/voxel_mipmap.comp");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxel_mipmap.comp\n");
-		}
-		const char *GL_COMPUTE_SHADER_src = str.c_str();
+		const char *GL_COMPUTE_SHADER_src = "#version 450 core\nlayout (local_size_x = 3, local_size_y = 3, local_size_z = 3) in;\n\nlayout (binding = 0, rgba16) uniform writeonly image3D uVoxelTextureMipmaps[6];\nlayout (binding = 6) uniform sampler3D uVoxelTextureSources[6];\n\nuniform ivec3 uVoxelDimensionMipmap, uVoxelDimensionSource;\nuniform int uSourceLod;\n\nconst ivec3 kOffsets[8] = \n{\n	{1, 1, 1}, {1, 1, 0}, {1, 0, 1}, {1, 0, 0},\n	{0, 1, 1}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}\n};\nconst int kSides[6][4] = \n{\n	{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4},\n	{2, 3, 7, 6}, {0, 2, 4, 6}, {1, 3, 5, 7}\n};\n\nvoid main()\n{\n	if(\n			gl_GlobalInvocationID.x >= uVoxelDimensionMipmap.x || \n			gl_GlobalInvocationID.y >= uVoxelDimensionMipmap.y ||\n			gl_GlobalInvocationID.z >= uVoxelDimensionMipmap.z) \n		return;\n\n	ivec3 mipmap_pos = ivec3(gl_GlobalInvocationID);\n\n	vec4 arr[8];\n	if(uSourceLod == 0)\n		for(int i = 0; i < 8; ++i)\n			arr[i] = texelFetch(uVoxelTextureSources[0], mipmap_pos * 2 + kOffsets[i], 0);\n\n	for(int face = 0; face < 6; ++face)\n	{\n		if(uSourceLod >= 1)\n			for(int i = 0; i < 8; ++i)\n				arr[i] = texelFetch(uVoxelTextureSources[face], mipmap_pos * 2 + kOffsets[i], uSourceLod - 1);\n\n		vec4 sum = vec4(0.0f);\n		int opposite = face % 2 == 0 ? face+1 : face-1;\n		sum += arr[kSides[face][0]] + arr[kSides[opposite][0]] * (1.0f - arr[kSides[face][0]].a);\n		sum += arr[kSides[face][1]] + arr[kSides[opposite][1]] * (1.0f - arr[kSides[face][1]].a);\n		sum += arr[kSides[face][2]] + arr[kSides[opposite][2]] * (1.0f - arr[kSides[face][2]].a);\n		sum += arr[kSides[face][3]] + arr[kSides[opposite][3]] * (1.0f - arr[kSides[face][3]].a);\n		sum *= 0.25f;\n\n		imageStore(uVoxelTextureMipmaps[face], mipmap_pos, sum);\n	}\n}\n";
 		shader = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(shader, 1, &GL_COMPUTE_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxel_mipmap.comp:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
 		unif_uVoxelDimensionMipmap = glGetUniformLocation(program_, "uVoxelDimensionMipmap");
+		unif_uVoxelDimensionSource = glGetUniformLocation(program_, "uVoxelDimensionSource");
 		unif_uSourceLod = glGetUniformLocation(program_, "uSourceLod");
 	}
 	void SetUVoxelDimensionMipmap(const glm::ivec3 &v) { glProgramUniform3iv(program_, unif_uVoxelDimensionMipmap, 1, glm::value_ptr(v)); }
 	GLint GetUVoxelDimensionMipmapLocation() const { return unif_uVoxelDimensionMipmap; };
+	void SetUVoxelDimensionSource(const glm::ivec3 &v) { glProgramUniform3iv(program_, unif_uVoxelDimensionSource, 1, glm::value_ptr(v)); }
+	GLint GetUVoxelDimensionSourceLocation() const { return unif_uVoxelDimensionSource; };
 	void SetUSourceLod(GLint v) { glProgramUniform1i(program_, unif_uSourceLod, v); }
 	GLint GetUSourceLodLocation() const { return unif_uSourceLod; };
 };

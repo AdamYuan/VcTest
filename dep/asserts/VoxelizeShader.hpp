@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class VoxelizeShader {
@@ -26,65 +27,24 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/voxelize.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxelize.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n\nin vec2 gTexcoords;\nin vec3 gNormal;\nin vec3 gWorldPos;\n\nlayout (binding = 0) uniform sampler2D uDiffuseTexture;\nlayout (binding = 1) uniform sampler2DShadow uShadowMap;\nlayout (rgba8, binding = 5) uniform writeonly image3D uVoxelAlbedo;\nlayout (rgba8, binding = 6) uniform writeonly image3D uVoxelNormal;\n//layout (rgba16, binding = 7) uniform writeonly image3D uVoxelRadiance;\n\nuniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;\nuniform float uVoxelWorldSize;\n\nvoid main()\n{\n	if(\n			gWorldPos.x < uVoxelGridRangeMin.x || gWorldPos.x > uVoxelGridRangeMax.x ||\n			gWorldPos.y < uVoxelGridRangeMin.y || gWorldPos.y > uVoxelGridRangeMax.y ||\n			gWorldPos.z < uVoxelGridRangeMin.z || gWorldPos.z > uVoxelGridRangeMax.z)\n		discard;\n	ivec3 voxel_pos = ivec3((gWorldPos - uVoxelGridRangeMin) / vec3(uVoxelWorldSize));\n\n	vec4 color = texture(uDiffuseTexture, gTexcoords);\n	imageStore(uVoxelAlbedo, voxel_pos, color);\n	//imageStore(uVoxelRadiance, voxel_pos, vec4(0.0f, 0.0f, 0.0f, color.a));\n\n	vec4 normal = vec4(normalize(gNormal) * 0.5f + 0.5f, 1.0f);\n	imageStore(uVoxelNormal, voxel_pos, normal);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxelize.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/voxelize.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxelize.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\nlayout (location = 0) in vec3 aPosition;\nlayout (location = 1) in vec3 aNormal;\nlayout (location = 2) in vec2 aTexcoords;\n\nout vec2 vTexcoords;\nout vec3 vNormal;\n\nvoid main()\n{\n	vTexcoords = aTexcoords;\n	vNormal = aNormal;\n	gl_Position = vec4(aPosition, 1.0f);\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxelize.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/voxelize.geom");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/voxelize.geom\n");
-		}
-		const char *GL_GEOMETRY_SHADER_src = str.c_str();
+		const char *GL_GEOMETRY_SHADER_src = "#version 450 core\n\nlayout (triangles) in;\nlayout (triangle_strip, max_vertices = 3) out;\n\nin vec3 vNormal[];\nin vec2 vTexcoords[];\n\nout vec2 gTexcoords;\nout vec3 gNormal;\nout vec3 gWorldPos;\n\nuniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;\nuniform float uVoxelWorldSize;\n\nvec3 WorldToScreen(in vec3 v)\n{\n	return ((v - uVoxelGridRangeMin) / uVoxelWorldSize) / 500.0f - 0.8f;\n}\n\nvec2 WorldToScreen(in vec3 v, in int axis)\n{\n	vec3 vs = WorldToScreen(v);\n	if(axis == 0) return vs.yz;\n	else if(axis == 1) return vs.xz;\n	else return vs.xy;\n}\n\nvoid AddVertex(in vec3 world_mid, in int vert_index, in int axis)\n{\n	gTexcoords = vTexcoords[vert_index];\n	gNormal = normalize(vNormal[vert_index]);\n\n	gWorldPos = gl_in[vert_index].gl_Position.xyz;\n\n	vec2 screen_pos = WorldToScreen(gWorldPos, axis), screen_mid_pos = WorldToScreen(world_mid, axis);\n	//screen_pos += normalize(screen_pos - screen_mid_pos) * 0.05f;\n\n	gl_Position = vec4(screen_pos, 1.0f, 1.0f);\n	EmitVertex();\n}\n\nvoid main()\n{\n    vec3 p1 = normalize(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz);\n    vec3 p2 = normalize(gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz);\n	vec3 axis_weight = abs(cross(p1, p2));\n\n	int axis;\n	if(axis_weight.x >= axis_weight.y && axis_weight.x > axis_weight.z) axis = 0;\n	else if(axis_weight.y >= axis_weight.z && axis_weight.y > axis_weight.x) axis = 1;\n	else axis = 2;\n\n	vec3 world_mid = (gl_in[0].gl_Position.xyz + gl_in[1].gl_Position.xyz + gl_in[2].gl_Position.xyz) / 3.0f;\n\n	AddVertex(world_mid, 0, axis);\n	AddVertex(world_mid, 1, axis);\n	AddVertex(world_mid, 2, axis);\n	EndPrimitive();\n}\n";
 		shader = glCreateShader(GL_GEOMETRY_SHADER);
 		glShaderSource(shader, 1, &GL_GEOMETRY_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/voxelize.geom:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

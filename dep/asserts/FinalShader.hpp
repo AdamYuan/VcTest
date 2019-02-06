@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class FinalShader {
@@ -34,45 +35,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/final_pass.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/final_pass.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n#define PI 3.14159265f\n\nout vec4 FragColor;\n\nin vec2 vTexcoords;\nin vec3 vViewDir;\n\nlayout (binding = 0) uniform sampler2D uGPosition;\nlayout (binding = 1) uniform sampler2D uGNormal;\nlayout (binding = 2) uniform sampler2D uGAlbedo;\nlayout (binding = 3) uniform sampler2D uHalfTraceResult;\nlayout (binding = 4) uniform samplerCube uSkyboxTexture;\nlayout (binding = 5) uniform sampler2D uShadowMap;\nlayout (binding = 6) uniform sampler3D uVoxelRadiance;\nlayout (binding = 9) uniform sampler3D uVoxelRadianceMipmaps[6];\n\nuniform mat4 uLightMatrix;\nuniform vec3 uLightDir;\n\nuniform ivec3 uVoxelDimension;\nuniform vec3 uVoxelGridRangeMin, uVoxelGridRangeMax;\nuniform float uVoxelWorldSize;\nuniform ivec2 uResolution;\n\nuniform bool uEnableIndirectTrace, uShowAlbedo, uShowEdge;\n\nuniform vec3 uCamPosition;\n\nconst vec3 kLightColor = vec3(2.2f, 2.0f, 1.8f) * 0.7f;\n\nmat3 Util_GetTBN(in vec3 normal)\n{\n	vec3 tangent;\n	vec3 v1 = cross(normal, vec3(0.0f, 0.0f, 1.0f)), v2 = cross(normal, vec3(0.0f, 1.0f, 0.0f));\n	if(dot(v1, v1) > dot(v2, v2))\n		tangent = v1;\n	else\n		tangent = v2;\n\n	return mat3(tangent, cross(tangent, normal), normal);\n}\nconst vec3 kConeDirections6[6] = \n{\n	vec3(0.0f, 0.0f, 1.0f),\n	vec3(0.0f, 0.866025f, 0.5f),\n	vec3(0.823639f, 0.267617f, 0.5f),\n	vec3(0.509037f, -0.7006629f, 0.5f),\n	vec3(-0.50937f, -0.7006629f, 0.5f),\n	vec3(-0.823639f, 0.267617f, 0.5f)\n};\nconst float kConeWeights6[6] = {0.25f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f};\n\n/*const vec3 kConeDirections5[5] = \n  {                      \n  vec3(0, 0, 1),\n  vec3(0, 0.707, 0.707),\n  vec3(0, -0.707, 0.707),\n  vec3(0.707, 0, 0.707),\n  vec3(-0.707, 0, 0.707)\n  };\n  const float kConeWeights5[5] = {0.28, 0.18, 0.18, 0.18, 0.18};*/\nvec4 VCT_SampleVoxel(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 world_pos, in float lod, in ivec3 indices, in vec3 weights)\n{\n	vec3 voxel_uv = ((world_pos - uVoxelGridRangeMin) / uVoxelWorldSize) / vec3(uVoxelDimension);\n\n	float mipmap_lod = max(0.0f, lod - 1.0f);\n	vec4 mipmap_color = vec4(0.0f);\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.x], voxel_uv, mipmap_lod) * weights.x;\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.y], voxel_uv, mipmap_lod) * weights.y;\n	mipmap_color += textureLod(voxel_radiance_mipmaps[indices.z], voxel_uv, mipmap_lod) * weights.z;\n	if(lod < 1.0f)\n		return mix(texture(voxel_radiance, voxel_uv), mipmap_color, max(lod, 0.0f));\n	else\n		return mipmap_color;\n}\n\nvec3 VCT_ConeTrace(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 start_pos, in vec3 direction, in float tan_half_angle, in float initial_dist, in float max_dist)\n{\n	vec4 color = vec4(0.0f);\n\n	float dist = initial_dist;\n\n	ivec3 load_indices = ivec3(\n			direction.x <= 0.0f ? 0 : 1, \n			direction.y <= 0.0f ? 2 : 3, \n			direction.z <= 0.0f ? 4 : 5);\n	vec3 weights = direction * direction;\n\n	while(dist < max_dist && color.a < 1.0f)\n	{\n		vec3 pos = start_pos + dist * direction;\n\n		float diameter = 2.0f * tan_half_angle * dist;\n		float lod = log2(diameter / uVoxelWorldSize);\n		vec4 voxel_color = VCT_SampleVoxel(voxel_radiance, voxel_radiance_mipmaps, pos, lod, load_indices, weights);\n		color += voxel_color * (1.0f - color.a);\n\n		dist += diameter * 0.5f;\n	}\n\n	return color.rgb;\n}\n\nvec3 VCT_IndirectLight(in sampler3D voxel_radiance, in sampler3D voxel_radiance_mipmaps[6], in vec3 start_pos, in mat3 matrix, in float initial_dist, in float max_dist)\n{\n	vec3 color = vec3(0.0f);\n\n	for(int i = 0; i < 6; i++)\n		color += kConeWeights6[i] * VCT_ConeTrace(voxel_radiance, voxel_radiance_mipmaps, start_pos, matrix * normalize(kConeDirections6[i]), 0.57735f, initial_dist, max_dist);\n\n	return color * 3.1415926;\n}\nconst float kEsmC = 60.0f;\n\nfloat SM_GetVisibility(in sampler2D shadow_map, in vec4 lightspace_pos)\n{\n	vec3 proj_coords = lightspace_pos.xyz / lightspace_pos.w;\n	proj_coords = proj_coords * 0.5f + 0.5f;\n\n	float current_depth = proj_coords.z;\n	float occluder = texture(shadow_map, proj_coords.xy).r;\n	return clamp(exp((occluder - kEsmC * current_depth)), 0.0f, 1.0f);\n}\n\nfloat SM_GetVisibility(in sampler2D shadow_map, in vec3 position, in mat4 light_matrix)\n{\n	vec4 lightspace_frag_pos = light_matrix * vec4(position, 1.0f);\n	return SM_GetVisibility(shadow_map, lightspace_frag_pos);\n}\n\nconst ivec2 kEdgeTests[8] = {{0, 1}, {1, 0}, {1, 1}, {0, -1}, {-1, 0}, {-1, -1}, {1, -1}, {-1, 1}};\n\nbool DetectEdge(in float depth, in vec3 normal)\n{\n	float sample_depth;\n	vec3 sample_normal;\n	for(int i = 0; i < 8; ++i)\n	{\n		sample_depth = texture(uGPosition, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).a;\n		if(abs(depth - sample_depth) > 0.7f)\n			return true;\n		sample_normal = texture(uGNormal, vec2(gl_FragCoord.xy + vec2(kEdgeTests[i])) / vec2(uResolution)).rgb * 2.0f - 1.0f;\n		if(dot(normal, sample_normal) < 0.8f)\n			return true;\n	}\n	return false;\n}\n\nvec3 DirectLight(in vec3 normal)\n{\n	//diffuse\n	return vec3(max(dot(-uLightDir, normal), 0.0));\n}\n\n\nvoid main()\n{\n	vec4 albedo = texture(uGAlbedo, vTexcoords);\n	vec3 final_color;\n\n	if(albedo.a > 0.5f)\n	{\n		vec4 pos4 = texture(uGPosition, vTexcoords);\n		vec3 position = pos4.rgb;\n		float depth = pos4.a;\n		vec3 normal = texture(uGNormal, vTexcoords).rgb * 2.0f - 1.0f;\n		vec3 trace_result = texture(uHalfTraceResult, vTexcoords).rgb;\n\n		final_color = DirectLight(normal) * SM_GetVisibility(uShadowMap, position, uLightMatrix);\n\n		bool edge = DetectEdge(depth, normal);\n		if(edge && uShowEdge)\n		{\n			final_color = vec3(1.0f, 0.0f, 0.0f);\n		}\n		else if(uEnableIndirectTrace)\n		{\n			if(edge)\n				final_color += VCT_IndirectLight(uVoxelRadiance, uVoxelRadianceMipmaps, position + normal * 0.3f, Util_GetTBN(normal), 0.3f, 32.0f);\n			else\n				final_color += texture(uHalfTraceResult, vTexcoords).rgb;\n		}\n		if(uShowAlbedo) \n			final_color *= albedo.rgb;\n		final_color *= kLightColor;\n	}\n	else\n		final_color = texture(uSkyboxTexture, vViewDir).rgb;\n\n	vec3 mapped = vec3(1.0f) - exp(-final_color * 1.5f);\n	mapped = pow(mapped, vec3(1.0f / 2.2f));\n	FragColor = vec4(mapped, 1.0f);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/final_pass.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/quad_dir.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/quad_dir.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\n\nlayout (location = 0) in vec2 aPosition;\nlayout (location = 1) in vec2 aTexcoords;\n\nout vec2 vTexcoords;\nout vec3 vViewDir;\n\nuniform mat4 uView, uProjection;\n\nvoid main()\n{\n	gl_Position = vec4(aPosition, 1.0, 1.0);\n\n	vTexcoords = aTexcoords;\n	vViewDir = mat3(inverse(uView)) * (inverse(uProjection) * gl_Position).xyz;\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/quad_dir.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

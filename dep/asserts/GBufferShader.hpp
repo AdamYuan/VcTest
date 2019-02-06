@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
+#include <sstream>
 #include <GL/gl3w.h>
 namespace asserts {
 class GBufferShader {
@@ -23,45 +24,17 @@ public:
 	void Initialize() {
 		GLuint shader;
 		program_ = glCreateProgram();
-		std::ifstream in; std::string str;
-		char log[100000]; int success;
-		in.open("shaders/gbuffer.frag");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/gbuffer.frag\n");
-		}
-		const char *GL_FRAGMENT_SHADER_src = str.c_str();
+		const char *GL_FRAGMENT_SHADER_src = "#version 450 core\n\nlayout (location = 0) out vec4 GPosition;\nlayout (location = 1) out vec3 GNormal;\nlayout (location = 2) out vec4 GAlbedo;\n\nin vec2 vTexcoords;\nin vec3 vFragPos, vNormal;\n\nlayout (binding = 0) uniform sampler2D uDiffuseTexture;\n\nconst float kNear = 0.1f, kFar = 100.0f; \nfloat LinearizeDepth(float depth) \n{\n    float z = depth * 2.0 - 1.0; // back to NDC \n    return (2.0 * kNear * kFar) / (kFar + kNear - z * (kFar - kNear));\n}\n\nvoid main()\n{\n	vec4 color4 = texture(uDiffuseTexture, vTexcoords);\n	if(color4.a < 0.1f)\n		discard;\n\n	GPosition = vec4(vFragPos, LinearizeDepth(gl_FragCoord.z));\n	GNormal = normalize(vNormal) * 0.5f + 0.5f;\n	GAlbedo = vec4(color4.rgb, 1.0f);\n}\n";
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(shader, 1, &GL_FRAGMENT_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/gbuffer.frag:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);
-		in.open("shaders/gbuffer.vert");
-		if(in.is_open()) {
-			std::getline(in, str, '\0');
-			in.close();
-		} else {
-			str.clear();
-			printf("[GLSLGEN ERROR] failed to load shaders/gbuffer.vert\n");
-		}
-		const char *GL_VERTEX_SHADER_src = str.c_str();
+		const char *GL_VERTEX_SHADER_src = "#version 450 core\n\nlayout (location = 0) in vec3 aPosition;\nlayout (location = 1) in vec3 aNormal;\nlayout (location = 2) in vec2 aTexcoords;\n\nout vec2 vTexcoords;\nout vec3 vFragPos, vNormal;\n\nuniform mat4 uProjection, uView;\n\nvoid main()\n{\n	vFragPos = aPosition;\n	vTexcoords = aTexcoords;\n	vNormal = aNormal;\n	gl_Position = uProjection * uView * vec4(aPosition, 1.0f);\n}\n";
 		shader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(shader, 1, &GL_VERTEX_SHADER_src, nullptr);
 		glCompileShader(shader);
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(shader, 100000, nullptr, log);
-			printf("[GLSLGEN ERROR] compile error in shaders/gbuffer.vert:\n%s\n", log);
-		}
 		glAttachShader(program_, shader);
 		glLinkProgram(program_);
 		glDeleteShader(shader);

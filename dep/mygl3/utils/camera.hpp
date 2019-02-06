@@ -28,8 +28,7 @@ namespace mygl3
 		const glm::vec3 &GetPosition() const { return position_; }
 		glm::mat4 GetMatrix() const
 		{
-			glm::mat4 view;
-			view = glm::rotate(view, glm::radians(-pitch_), glm::vec3(1.0f, 0.0f, 0.0f));
+			glm::mat4 view = glm::rotate(glm::identity<glm::mat4>(), glm::radians(-pitch_), glm::vec3(1.0f, 0.0f, 0.0f));
 			view = glm::rotate(view, glm::radians(-yaw_), glm::vec3(0.0f, 1.0f, 0.0f));
 			view = glm::translate(view, -position_);
 
